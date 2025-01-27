@@ -1,0 +1,12 @@
+{{{
+  exports({ to: app.makePath('app/jobs/' + filename + '.ts') })
+}}}
+import { Job } from 'breeze'
+
+type {{ className }}Payload = {}
+
+export default class {{ className }} extends Job {
+    async handle(payload: {{ className }}Payload) {
+        this.logger.info('{{ className }} job handled')
+    }
+}
