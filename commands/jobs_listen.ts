@@ -36,7 +36,8 @@ export default class JobsListen extends BaseCommand {
     const logger = await this.app.container.make('logger')
     const router = await this.app.container.make('router')
     const jobs = await this.app.container.make('jobs.list')
-    const queues = this.queue || [config.queue]
+    const queues = config.queues || [config.queue] || this.queue
+
     const workers: Worker[] = []
 
     router.commit()

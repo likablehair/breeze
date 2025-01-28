@@ -1,5 +1,5 @@
 import type { ApplicationService } from '@adonisjs/core/types'
-import ClosureJob from './jobs/closure_job.js'
+// import ClosureJob from './jobs/closure_job.js'
 import { Queue as BullmqQueue, JobsOptions } from 'bullmq'
 import { Job } from './job.js'
 import { type defineConfig } from './define_config.js'
@@ -12,10 +12,11 @@ export class Dispatcher {
     payload: any,
     options: JobsOptions & { queueName?: string } = {}
   ) {
+    console.log('Inside dispatch')
     let isClosure = !(
       typeof jobOrClosure === 'function' && /^class\s/.test(jobOrClosure.toString())
     )
-    let job = isClosure ? ClosureJob : jobOrClosure
+    let job = jobOrClosure
     payload = isClosure
       ? {
           serializedClosure: jobOrClosure.toString(),
@@ -35,6 +36,7 @@ export class Dispatcher {
       throw new Error(`Queue ${queueName} not found`)
     }
 
+    console.log('pippo')
     const bullmqJob = await queue.add(job.name, payload, options)
 
     return bullmqJob.id

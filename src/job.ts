@@ -1,5 +1,6 @@
 import { Job as BullmqJob, JobsOptions } from 'bullmq'
 import type { ApplicationService, LoggerService } from '@adonisjs/core/types'
+import { Dispatcher } from './dispatcher.js'
 
 type JobHandle<T> = T extends (payload: infer P) => any ? (undefined extends P ? any : P) : any
 
@@ -13,9 +14,8 @@ export abstract class Job {
     payload: JobHandle<T['handle']>,
     options: JobsOptions & { queueName?: string } = {}
   ) {
-    const { dispatch } = await import('../services/main.js')
-
-    return await dispatch(this, payload, options)
+    const dispatcher = new Dispatcher(Job.app)
+    return await dispatcher.dispatch(this, payload, options)
   }
 
   static async dispatchSync<T extends Job>(this: new () => T, payload: JobHandle<T['handle']>) {
