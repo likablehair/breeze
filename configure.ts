@@ -21,8 +21,8 @@ export async function configure(command: ConfigureCommand) {
   await codemods.makeUsingStub(stubsRoot, 'config/jobs.stub', {})
 
   await codemods.updateRcFile((rcFile: any) => {
-    rcFile.addProvider('breeze/jobs_provider')
-    rcFile.addCommand('breeze/commands')
+    rcFile.addProvider('@likable-hair/breeze/jobs_provider')
+    rcFile.addCommand('@likable-hair/breeze/commands')
   })
 
   await codemods.defineEnvVariables({

@@ -15,6 +15,7 @@ export default class JobsProvider {
   constructor(protected app: ApplicationService) {}
 
   async boot() {
+    console.log('Booting breeze .... ')
     const jobs: Record<string, typeof Job> = {}
     const jobsFiles = await fsReadAll(this.app.relativePath('app/jobs'), {
       pathType: 'url',
@@ -55,8 +56,6 @@ export default class JobsProvider {
     const router = await this.app.container.make('router')
     const config = this.app.config.get<ReturnType<typeof defineConfig>>('jobs', {})
 
-    console.log(config)
-
     const queues = config.queues.reduce(
       (acc, name) => {
         const queue = new BullmqQueue(name, {
@@ -76,6 +75,8 @@ export default class JobsProvider {
         await queues[queueName].close()
       }
     })
+
+    console.log(this.app)
 
     this.app.container.singleton('jobs.list', () => jobs)
     this.app.container.singleton('jobs.queues', () => queues)
@@ -184,6 +185,7 @@ export default class JobsProvider {
         })
       })
     }
+    console.log('Breeze Booted! ')
   }
 }
 
