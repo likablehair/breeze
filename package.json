@@ -1,5 +1,5 @@
 {
-  "name": "breeze",
+  "name": "@likable-hair/breeze",
   "description": "Job processing for AdonisJS",
   "homepage": "https://github.com/likablehair/breeze#readme",
   "license": "MIT",
@@ -74,7 +74,7 @@
   "np": {
     "message": "chore(release): %s",
     "tag": "latest",
-    "branch": "main",
+    "branch": "master",
     "anyBranch": false
   },
   "c8": {
