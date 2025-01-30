@@ -13,11 +13,7 @@ export abstract class Job {
     payload: JobHandle<T['handle']>,
     options: JobsOptions & { queueName?: string } = {}
   ) {
-    console.log('pippo')
-    const { default: app } = await import('@adonisjs/core/services/app')
-    console.log(app)
     const { dispatch } = await import('../services/main.js')
-    console.log(this)
     return await dispatch(this, payload, options)
   }
 
