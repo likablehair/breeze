@@ -5,9 +5,9 @@ import type { Job } from '../src/job.js'
 
 let dispatcher: Dispatcher = await app.container.make('jobs.dispatcher')
 
-// await app.booted(async () => {
-//   dispatcher = await app.container.make('jobs.dispatcher')
-// })
+await app.booted(async () => {
+  dispatcher = await app.container.make('jobs.dispatcher')
+})
 
 export const dispatch = async (
   jobOrClosure: Function | typeof Job,
