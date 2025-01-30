@@ -14,7 +14,7 @@ export const dispatch = async (
   payload: any = {},
   options: JobsOptions & { queueName?: string } = {}
 ) => {
-  await dispatcher.dispatch(jobOrClosure, payload, options)
+  return await dispatcher.dispatch(jobOrClosure, payload, options)
 }
 
 export { dispatcher as default }
