@@ -1,6 +1,6 @@
 import { BaseCommand, flags } from '@adonisjs/core/ace'
 import type { CommandOptions } from '@adonisjs/core/types/ace'
-import { Worker } from 'bullmq'
+import { Worker, Job as BullmqJob } from 'bullmq'
 import type { Job, defineConfig } from '../index.js'
 
 export default class JobsListen extends BaseCommand {
@@ -48,39 +48,81 @@ export default class JobsListen extends BaseCommand {
 
     for (const queueName of queues) {
       const worker = new Worker(
-        queueName,
-        async (job) => {
-          const jobClass = jobs[job.name]
+          queueName,
+          async (job) => {
+            const jobClass = jobs[job.name]
 
-          if (!jobClass) {
-            logger.error(`Cannot find job ${job.name}`)
+            if (!jobClass) {
+              logger.error(`Cannot find job ${job.name}`)
+            }
+            let instance: Job
+
+            try {
+              instance = await this.app.container.make(jobClass)
+            } catch (error) {
+              logger.error(`Cannot instantiate job ${job.name}`)
+              return
+            }
+
+            instance.job = job
+            instance.logger = logger
+
+            logger.info(`Job ${job.name} started`)
+            await instance.handle(job.data)
+            logger.info(`Job ${job.name} finished`)
+
+
+
+
+
+
+
+
+
+            
+          },
+          {
+            ...(config.workerOptions || {}),
+            connection: config.connection,
+            concurrency: this.concurrency,
           }
-          let instance: Job
+        )
+        
+        worker.on('active', (_job) => { 
+          console.log(_job)
+          const instance: BullmqJob = _job
+          if(!!instance)
+          instance.isActive()
 
-          try {
-            instance = await this.app.container.make(jobClass)
-          } catch (error) {
-            logger.error(`Cannot instantiate job ${job.name}`)
-            return
-          }
+        })
+       
+        worker.on('paused', () => { })
 
-          instance.job = job
-          instance.logger = logger
+        worker.on('progress', () => { })
 
-          logger.info(`Job ${job.name} started`)
-          await instance.handle(job.data)
-          logger.info(`Job ${job.name} finished`)
-        },
-        {
-          ...(config.workerOptions || {}),
-          connection: config.connection,
-          concurrency: this.concurrency,
-        }
-      )
+        worker.on('ready', () => { })
 
-      worker.on('failed', (_job, error) => {
-        logger.error(error.message, [])
-      })
+        worker.on('resumed', () => { })
+
+        worker.on('stalled', () => { })
+
+        worker.on('failed', (_job, error) => {
+          logger.error(error.message, [])
+        })
+
+        worker.on('closing', (msg: string) => {
+          console.log(msg)
+
+        })
+        // worker.on('completed', (job: Job<DataType, ResultType, NameType>, result: ResultType, prev: string) => {
+
+        // })
+
+        worker.on('closed', () => { })
+
+        worker.on('drained', () => { })
+
+        worker.on('error', () => {  })
 
       workers.push(worker)
     }

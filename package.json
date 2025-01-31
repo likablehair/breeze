@@ -94,7 +94,7 @@
     "@poppinss/utils": "^6.7.3",
     "@queuedash/api": "^2.1.0",
     "@trpc/server": "^10.45.2",
-    "bullmq": "^5.4.5",
+    "bullmq": "^5.29.1",
     "import-meta-resolve": "^4.1.0"
   }
 }
