@@ -5,7 +5,7 @@ import redis from '@adonisjs/redis/services/main'
 export type EventName = 'worker:active'
 class Ws {
   io: Server
-  private booted = false
+  booted = false
 
   boot() {
     if (this.booted) {
