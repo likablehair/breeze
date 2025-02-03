@@ -37,6 +37,6 @@ export class Dispatcher {
 
     const bullmqJob = await queue.add(job.name, payload, options)
 
-    return bullmqJob.id
+    return bullmqJob
   }
 }
