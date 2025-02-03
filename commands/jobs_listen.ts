@@ -97,7 +97,7 @@ export default class JobsListen extends BaseCommand {
         logger.error(error.message, [])
       })
 
-      worker.on('closing', (msg: string) => {})
+      worker.on('closing', (_msg: string) => {})
 
       worker.on('closed', () => {})
 
