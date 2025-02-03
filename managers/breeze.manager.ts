@@ -1,27 +1,26 @@
 import { Worker, QueueEvents } from 'bullmq'
-import type { LoggerService } from '@adonisjs/core/types'
+import type { ApplicationService, LoggerService } from '@adonisjs/core/types'
 import Ws from '../services/ws.js'
-import app from '@adonisjs/core/services/app'
 import { defineConfig } from '../src/define_config.js'
 import { Job } from '../src/job.js'
 
 export class BreezeManager {
   private logger: LoggerService
 
-  constructor() {}
+  constructor(private app: ApplicationService) {}
 
   async process() {
     const concurrency: number = 1
-    const config = app.config.get<ReturnType<typeof defineConfig>>('jobs', {})
-    const logger = await app.container.make('logger')
-    const jobs = await app.container.make('jobs.list')
+    const config = this.app.config.get<ReturnType<typeof defineConfig>>('jobs', {})
+    const logger = await this.app.container.make('logger')
+    const jobs = await this.app.container.make('jobs.list')
     const queues = config.queues || [config.queue]
 
     logger.info(`Processing jobs from the ${JSON.stringify(queues)} queues.`)
 
     const workers: Worker[] = []
 
-    app.terminating(async () => {
+    this.app.terminating(async () => {
       await Promise.allSettled(workers.map((worker) => worker.close()))
     })
 
@@ -35,7 +34,7 @@ export class BreezeManager {
           }
           let instance: Job
           try {
-            instance = await app.container.make(jobClass)
+            instance = await this.app.container.make(jobClass)
           } catch (error) {
             logger.error(`Cannot instantiate job ${job.name}`)
             return
@@ -56,7 +55,6 @@ export class BreezeManager {
       )
       const queueEvents = new QueueEvents(queueName)
       this.bindEvents(worker, queueEvents)
-      // this.bindQueueEvent(queueEvents)
       workers.push(worker)
     }
   }

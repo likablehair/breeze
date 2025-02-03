@@ -6,6 +6,7 @@ import { Job, defineConfig } from '../index.js'
 import { RouteGroup } from '@adonisjs/core/http'
 import { Queue as BullmqQueue } from 'bullmq'
 import { Dispatcher } from '../src/dispatcher.js'
+import { BreezeManager } from '../managers/breeze.manager.js'
 
 const JS_MODULES = ['.js', '.cjs', '.mjs']
 
@@ -75,6 +76,7 @@ export default class JobsProvider {
     this.app.container.singleton('jobs.list', () => jobs)
     this.app.container.singleton('jobs.queues', () => queues)
     this.app.container.singleton('jobs.dispatcher', () => new Dispatcher(this.app))
+    this.app.container.singleton('breeze', () => new BreezeManager(this.app))
   }
 }
 
@@ -89,5 +91,6 @@ declare module '@adonisjs/core/types' {
     'jobs.list': Record<string, typeof Job>
     'jobs.queues': Record<string, BullmqQueue>
     'jobs.dispatcher': Dispatcher
+    'breeze': BreezeManager
   }
 }
