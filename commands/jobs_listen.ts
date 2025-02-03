@@ -79,7 +79,6 @@ export default class JobsListen extends BaseCommand {
       )
 
       worker.on('active', (_job) => {
-        console.log(_job)
         const instance: BullmqJob = _job
         if (instance) instance.isActive()
       })
@@ -99,11 +98,7 @@ export default class JobsListen extends BaseCommand {
       })
 
       worker.on('closing', (msg: string) => {
-        console.log(msg)
       })
-      // worker.on('completed', (job: Job<DataType, ResultType, NameType>, result: ResultType, prev: string) => {
-
-      // })
 
       worker.on('closed', () => {})
 
