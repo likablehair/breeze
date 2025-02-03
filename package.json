@@ -12,7 +12,7 @@
     "redis",
     "bullmq"
   ],
-  "version": "1.0.3",
+  "version": "1.0.7",
   "engines": {
     "node": ">=20.6.0"
   },
@@ -33,6 +33,7 @@
     "copy:templates": "copyfiles \"stubs/**/*.stub\" build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext=.ts",
+    "lint_fix": "eslint . --ext=.ts --fix",
     "format": "prettier --write .",
     "quick:test": "node --import=./tsnode.esm.js --enable-source-maps bin/test.ts",
     "pretest": "npm run lint",
