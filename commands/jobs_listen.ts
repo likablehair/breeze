@@ -1,8 +1,6 @@
 import { BaseCommand, flags } from '@adonisjs/core/ace'
 import type { CommandOptions } from '@adonisjs/core/types/ace'
-import { Worker, Job as BullmqJob } from 'bullmq'
-import type { Job, defineConfig } from '../index.js'
-
+import { BreezeManager } from '../managers/breeze.manager.js'
 export default class JobsListen extends BaseCommand {
   static commandName = 'jobs:listen'
   static description = ''
@@ -32,101 +30,7 @@ export default class JobsListen extends BaseCommand {
   declare concurrency: number
 
   async run() {
-    const config = this.app.config.get<ReturnType<typeof defineConfig>>('jobs', {})
-    const logger = await this.app.container.make('logger')
-    const router = await this.app.container.make('router')
-    const jobs = await this.app.container.make('jobs.list')
-    const queues = config.queues || [config.queue] || this.queue
-
-    const workers: Worker[] = []
-
-    router.commit()
-
-    this.app.terminating(async () => {
-      await Promise.allSettled(workers.map((worker) => worker.close()))
-    })
-
-    for (const queueName of queues) {
-      const worker = new Worker(
-          queueName,
-          async (job) => {
-            const jobClass = jobs[job.name]
-
-            if (!jobClass) {
-              logger.error(`Cannot find job ${job.name}`)
-            }
-            let instance: Job
-
-            try {
-              instance = await this.app.container.make(jobClass)
-            } catch (error) {
-              logger.error(`Cannot instantiate job ${job.name}`)
-              return
-            }
-
-            instance.job = job
-            instance.logger = logger
-
-            logger.info(`Job ${job.name} started`)
-            await instance.handle(job.data)
-            logger.info(`Job ${job.name} finished`)
-
-
-
-
-
-
-
-
-
-            
-          },
-          {
-            ...(config.workerOptions || {}),
-            connection: config.connection,
-            concurrency: this.concurrency,
-          }
-        )
-        
-        worker.on('active', (_job) => { 
-          console.log(_job)
-          const instance: BullmqJob = _job
-          if(!!instance)
-          instance.isActive()
-
-        })
-       
-        worker.on('paused', () => { })
-
-        worker.on('progress', () => { })
-
-        worker.on('ready', () => { })
-
-        worker.on('resumed', () => { })
-
-        worker.on('stalled', () => { })
-
-        worker.on('failed', (_job, error) => {
-          logger.error(error.message, [])
-        })
-
-        worker.on('closing', (msg: string) => {
-          console.log(msg)
-
-        })
-        // worker.on('completed', (job: Job<DataType, ResultType, NameType>, result: ResultType, prev: string) => {
-
-        // })
-
-        worker.on('closed', () => { })
-
-        worker.on('drained', () => { })
-
-        worker.on('error', () => {  })
-
-      workers.push(worker)
-    }
-
-    logger.info(`Processing jobs from the ${JSON.stringify(queues)} queues.`)
+    const breeze = new BreezeManager()
+    await breeze.process()
   }
 }

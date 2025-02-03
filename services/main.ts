@@ -3,7 +3,7 @@ import { JobsOptions } from 'bullmq'
 import type { Dispatcher } from '../src/dispatcher.js'
 import type { Job } from '../src/job.js'
 
-let dispatcher: Dispatcher = await app.container.make('jobs.dispatcher')
+let dispatcher: Dispatcher
 
 await app.booted(async () => {
   dispatcher = await app.container.make('jobs.dispatcher')

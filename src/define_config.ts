@@ -1,6 +1,6 @@
 import type { ConnectionOptions, JobsOptions, WorkerOptions } from 'bullmq'
 
-type Config = {
+export type Config = {
   connection: ConnectionOptions
   queue: string
   queues: string[]
