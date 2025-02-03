@@ -48,81 +48,68 @@ export default class JobsListen extends BaseCommand {
 
     for (const queueName of queues) {
       const worker = new Worker(
-          queueName,
-          async (job) => {
-            const jobClass = jobs[job.name]
+        queueName,
+        async (job) => {
+          const jobClass = jobs[job.name]
 
-            if (!jobClass) {
-              logger.error(`Cannot find job ${job.name}`)
-            }
-            let instance: Job
-
-            try {
-              instance = await this.app.container.make(jobClass)
-            } catch (error) {
-              logger.error(`Cannot instantiate job ${job.name}`)
-              return
-            }
-
-            instance.job = job
-            instance.logger = logger
-
-            logger.info(`Job ${job.name} started`)
-            await instance.handle(job.data)
-            logger.info(`Job ${job.name} finished`)
-
-
-
-
-
-
-
-
-
-            
-          },
-          {
-            ...(config.workerOptions || {}),
-            connection: config.connection,
-            concurrency: this.concurrency,
+          if (!jobClass) {
+            logger.error(`Cannot find job ${job.name}`)
           }
-        )
-        
-        worker.on('active', (_job) => { 
-          console.log(_job)
-          const instance: BullmqJob = _job
-          if(!!instance)
-          instance.isActive()
+          let instance: Job
 
-        })
-       
-        worker.on('paused', () => { })
+          try {
+            instance = await this.app.container.make(jobClass)
+          } catch (error) {
+            logger.error(`Cannot instantiate job ${job.name}`)
+            return
+          }
 
-        worker.on('progress', () => { })
+          instance.job = job
+          instance.logger = logger
 
-        worker.on('ready', () => { })
+          logger.info(`Job ${job.name} started`)
+          await instance.handle(job.data)
+          logger.info(`Job ${job.name} finished`)
+        },
+        {
+          ...(config.workerOptions || {}),
+          connection: config.connection,
+          concurrency: this.concurrency,
+        }
+      )
 
-        worker.on('resumed', () => { })
+      worker.on('active', (_job) => {
+        console.log(_job)
+        const instance: BullmqJob = _job
+        if (instance) instance.isActive()
+      })
 
-        worker.on('stalled', () => { })
+      worker.on('paused', () => {})
 
-        worker.on('failed', (_job, error) => {
-          logger.error(error.message, [])
-        })
+      worker.on('progress', () => {})
 
-        worker.on('closing', (msg: string) => {
-          console.log(msg)
+      worker.on('ready', () => {})
 
-        })
-        // worker.on('completed', (job: Job<DataType, ResultType, NameType>, result: ResultType, prev: string) => {
+      worker.on('resumed', () => {})
 
-        // })
+      worker.on('stalled', () => {})
 
-        worker.on('closed', () => { })
+      worker.on('failed', (_job, error) => {
+        logger.error(error.message, [])
+      })
 
-        worker.on('drained', () => { })
+      worker.on('closing', (msg: string) => {
+        console.log(msg)
+      })
+      // worker.on('completed', (job: Job<DataType, ResultType, NameType>, result: ResultType, prev: string) => {
 
-        worker.on('error', () => {  })
+      // })
+
+      worker.on('closed', () => {})
+
+      worker.on('drained', () => {})
+
+      worker.on('error', () => {})
 
       workers.push(worker)
     }

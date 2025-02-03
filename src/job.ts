@@ -3,11 +3,7 @@ import type { ApplicationService, LoggerService } from '@adonisjs/core/types'
 
 type JobHandle<T> = T extends (payload: infer P) => any ? (undefined extends P ? any : P) : any
 
-export abstract class Job<
-    DataType = any, 
-    ResultType = any, 
-    NameType extends string = string
-  >{
+export abstract class Job<DataType = any, ResultType = any, NameType extends string = string> {
   declare job: BullmqJob
   declare logger: LoggerService
   declare static app: ApplicationService
@@ -35,7 +31,4 @@ export abstract class Job<
   abstract handle(payload: any): Promise<void> | void
 
   workerOnActive?: (job: Job<DataType, ResultType, NameType>, prev: string) => void
-
-
-
 }
