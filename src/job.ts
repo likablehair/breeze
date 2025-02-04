@@ -157,14 +157,22 @@ export abstract class Job<TPayload = any, TResult = any> {
    *
    * This event is triggered when a job has successfully completed.
    */
-  queueOnCompleted?: (
-    args: {
-      jobId: string
-      returnvalue: string
-      prev?: string
-    },
-    id: string
-  ) => void
+  // queueOnCompleted?: (
+  //   args: {
+  //     jobId: string
+  //     returnvalue: string
+  //     prev?: string
+  //   },
+  //   id: string
+  // ) => void
+
+  
+  protected async queueOnCompleted (args: { jobId: string; returnvalue: string; prev?: string; }, id: string) {
+    // logger.info(`${this.key} Job ${args.jobId} has completed - Queue Event id: ${id}`);
+
+    console.log(`${this.instance!.name} Job ${args.jobId} has completed - Queue Event id: ${id}`)
+
+  }
 
   /**
    * Listen to 'debounced' event.
