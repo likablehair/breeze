@@ -1,18 +1,39 @@
 import { Worker, QueueEvents } from 'bullmq'
-import type { ApplicationService, LoggerService } from '@adonisjs/core/types'
+import type { ApplicationService } from '@adonisjs/core/types'
 import Ws from '../services/ws.js'
 import { defineConfig } from '../src/define_config.js'
 import { Job } from '../src/job.js'
+import winston from 'winston'
+
+const customColors = {
+  info: 'green',
+  warn: 'yellow',
+  error: 'red',
+}
+
+winston.addColors(customColors)
+
+const logger = winston.createLogger({
+  format: winston.format.combine(
+    winston.format.colorize({ all: true }),
+    winston.format.timestamp(),
+    winston.format.printf(({ timestamp, level, message }) => `[${timestamp}] ${level}: ${message}`)
+  ),
+  transports: [new winston.transports.Console()],
+})
+
+export interface EventListener {
+  eventName: string
+  method: string
+}
 
 export class BreezeManager {
-  private logger: LoggerService
-
   constructor(private app: ApplicationService) {}
 
   async process() {
     const concurrency: number = 1
     const config = this.app.config.get<ReturnType<typeof defineConfig>>('jobs', {})
-    const logger = await this.app.container.make('logger')
+    // const logger = await this.app.container.make('logger')
     const jobs = await this.app.container.make('jobs.list')
     const queues = config.queues || [config.queue]
 
@@ -40,9 +61,12 @@ export class BreezeManager {
             return
           }
           instance.job = job
-          instance.logger = logger
+          // instance.logger = logger
 
-          console.log(instance.job)
+          // console.log(instance.job)
+          const events = this._getEventListener(instance)
+          console.log(events)
+
           logger.info(`Job ${job.name} started`)
           await instance.handle(job.data)
           logger.info(`Job ${job.name} finished`)
@@ -59,9 +83,54 @@ export class BreezeManager {
     }
   }
 
+  private _getEventListener(job: Job): {
+    workerEvent: EventListener[]
+    queueEvents: EventListener[]
+  } {
+    const jobEvents = Object.getOwnPropertyNames(Object.getPrototypeOf(job)).reduce(
+      (events, method: string) => {
+        if (method.startsWith('workerOn')) {
+          let eventName = method
+            .replace(/^workerOn(\w)/, (_, group) => group.toLowerCase())
+            .replace(/([A-Z]+)/, (_, group) => ` ${group.toLowerCase()}`.trim())
+
+          if (eventName === 'ioredisclose') {
+            eventName = 'ioredis:close'
+          }
+
+          events.workerEvent.push({ eventName, method })
+        } else if (method.startsWith('queueOn')) {
+          let eventName = method
+            .replace(/^queueOn(\w)/, (_, group) => group.toLowerCase())
+            .replace(/([A-Z]+)/, (_, group) => ` ${group.toLowerCase()}`.trim())
+
+          if (eventName === 'retriesexhausted') {
+            eventName = 'retries-exhausted'
+          }
+
+          if (eventName === 'waitingchildren') {
+            eventName = 'waiting-children'
+          }
+
+          events.queueEvents.push({ eventName, method })
+        }
+
+        return events
+      },
+      {
+        workerEvent: [],
+        queueEvents: [],
+      } as {
+        workerEvent: EventListener[]
+        queueEvents: EventListener[]
+      }
+    )
+
+    return jobEvents
+  }
   private bindEvents(worker: Worker, queueEvents: QueueEvents) {
     worker.on('completed', (job) => {
-      this.logger.info(`Job ${job.id} completed`)
+      logger.info(`Job ${job.id} completed`)
       Ws.io.emit(`jobs:${job.queueName}`, {
         event: 'completed',
         jobId: job.id,
@@ -69,7 +138,7 @@ export class BreezeManager {
     })
 
     worker.on('failed', (job, err) => {
-      this.logger.error(`Job ${job} failed: ${err.message}`)
+      logger.error(`Job ${job} failed: ${err.message}`)
       Ws.io.emit(`jobs:${job}`, {
         event: 'failed',
         jobId: job,
@@ -78,12 +147,12 @@ export class BreezeManager {
     })
 
     worker.on('stalled', (job) => {
-      this.logger.warn(`Job ${job} stalled`)
+      logger.warn(`Job ${job} stalled`)
       Ws.io.emit(`jobs:${job}`, { event: 'stalled', jobId: job })
     })
 
     worker.on('progress', (job, progress) => {
-      this.logger.info(`Job ${job.id} progress: ${progress}%`)
+      logger.info(`Job ${job.id} progress: ${progress}%`)
       Ws.io.emit(`jobs:${job.queueName}`, {
         event: 'progress',
         jobId: job.id,
@@ -92,17 +161,17 @@ export class BreezeManager {
     })
 
     queueEvents.on('waiting', ({ jobId }) => {
-      this.logger.info(`Job ${jobId} is waiting`)
+      logger.info(`Job ${jobId} is waiting`)
       Ws.io.emit(`jobs:${worker.name}`, { event: 'waiting', jobId })
     })
 
     queueEvents.on('delayed', ({ jobId }) => {
-      this.logger.info(`Job ${jobId} is delayed`)
+      logger.info(`Job ${jobId} is delayed`)
       Ws.io.emit(`jobs:${worker.name}`, { event: 'delayed', jobId })
     })
 
     queueEvents.on('failed', ({ jobId, failedReason }) => {
-      this.logger.error(`Job ${jobId} failed: ${failedReason}`)
+      logger.error(`Job ${jobId} failed: ${failedReason}`)
       Ws.io.emit(`jobs:${worker.name}`, {
         event: 'failed',
         jobId,
@@ -111,7 +180,7 @@ export class BreezeManager {
     })
 
     queueEvents.on('completed', ({ jobId }) => {
-      this.logger.info(`Job ${jobId} completed`)
+      logger.info(`Job ${jobId} completed`)
       Ws.io.emit(`jobs:${worker.name}`, { event: 'completed', jobId })
     })
   }
