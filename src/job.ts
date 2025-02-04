@@ -166,12 +166,13 @@ export abstract class Job<TPayload = any, TResult = any> {
   //   id: string
   // ) => void
 
-  
-  protected async queueOnCompleted (args: { jobId: string; returnvalue: string; prev?: string; }, id: string) {
+  protected async queueOnCompleted(
+    args: { jobId: string; returnvalue: string; prev?: string },
+    id: string
+  ) {
     // logger.info(`${this.key} Job ${args.jobId} has completed - Queue Event id: ${id}`);
 
     console.log(`${this.instance!.name} Job ${args.jobId} has completed - Queue Event id: ${id}`)
-
   }
 
   /**
