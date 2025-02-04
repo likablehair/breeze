@@ -4,11 +4,20 @@ import { EventListener } from '../managers/breeze.manager.js'
 
 type JobHandle<T> = T extends (payload: infer P) => any ? (undefined extends P ? any : P) : any
 
+export const listeners = [
+  'workerOnActive',
+  'workerOnClosed',
+  'workerOnClosing',
+  'workerOnCompleted',
+  'queueOnCompleted',
+] as const
+export type ListenersType = (typeof listeners)[number]
+export const isListener = (x: any): x is ListenersType => listeners.includes(x)
 export abstract class Job<TPayload = any, TResult = any> {
-  declare instance: BullmqJob<TPayload, TResult>
-  declare logger: LoggerService
-  declare workerListener: EventListener[]
-  declare queueLister: EventListener[]
+  declare instance?: BullmqJob<TPayload, TResult>
+  declare logger?: LoggerService
+  declare workerListener?: EventListener[]
+  declare queueListener?: EventListener[]
   declare static app: ApplicationService
 
   abstract handle(payload: TPayload): Promise<TResult> | TResult
@@ -34,6 +43,7 @@ export abstract class Job<TPayload = any, TResult = any> {
   }
 
   boot?: (queue: Queue<TPayload, TResult>) => void
+
   /**
    * This event is triggered when a job enters the 'active' state
    */

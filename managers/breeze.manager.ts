@@ -2,7 +2,7 @@ import { Worker, QueueEvents, Processor, WorkerOptions, QueueEventsOptions } fro
 import type { ApplicationService } from '@adonisjs/core/types'
 // import Ws from '../services/ws.js'
 import { defineConfig } from '../src/define_config.js'
-import { Job } from '../src/job.js'
+import { isListener, Job, ListenersType } from '../src/job.js'
 import winston from 'winston'
 
 const customColors = {
@@ -24,7 +24,7 @@ const logger = winston.createLogger({
 
 export interface EventListener {
   eventName: string
-  method: string
+  method: ListenersType
 }
 
 export class BreezeManager {
@@ -49,9 +49,9 @@ export class BreezeManager {
       if (!jobClass) {
         logger.error(`Cannot find job ${queueName}`)
       }
-      let instance: Job
+      let job: Job
       try {
-        instance = await this.app.container.make(jobClass)
+        job = await this.app.container.make(jobClass)
       } catch (error) {
         logger.error(`Cannot initialize job ${queueName}`)
         return
@@ -70,10 +70,10 @@ export class BreezeManager {
       // const events = this._getEventListener(instance)
       // console.log(events)
 
-      const processor: Processor = async (job) => {
+      const processor: Processor = async (process) => {
         try {
           logger.info(`Job ${queueName} started`)
-          return await instance.handle(job.data)
+          return await job.handle(process.data)
         } catch (error) {
           logger.error(error)
           return Promise.reject(error)
@@ -83,124 +83,122 @@ export class BreezeManager {
       const worker = new Worker(queueName, processor, workerOptions)
       const queueEvents = new QueueEvents(queueName, queueEventsOptions)
 
-      // instance.workerListener.forEach(function (item) {
-      //   worker.on(item.eventName as any, instance.instance[item.method].bind(instance))
-      // })
+      const listeners = this._getListener(job)
+      job.workerListener = listeners.workerListener
 
-      // instance.queueLister.forEach(function (item) {
-      //   queueEvents.on(
-      //     item.eventName as any,
-      //     instance.instance[item.method].bind(instance)
-      //   )
-      // })
+      job.workerListener.forEach(function (item) {
+        worker.on(item.eventName as any, job[item.method]!.bind(job))
+      })
 
-      this.bindEvents(worker, queueEvents)
+      job.queueListener = listeners.queueListener
+      job.queueListener.forEach(function (item) {
+        queueEvents.on(item.eventName as any, job[item.method]!.bind(job))
+      })
+
+      // this.bindEvents(worker, queueEvents)
       workers.push(worker)
     }
   }
 
-  // private _getListener(job: Job): {
-  //   workerListener: EventListener[]
-  //   queueListener: EventListener[]
-  // } {
-  //   const listener = Object.getOwnPropertyNames(Object.getPrototypeOf(job)).reduce(
-  //     (events, method: string) => {
-  //       console.log(events)
-  //       console.log(method)
-  //       if (method.startsWith('workerOn')) {
-  //         let eventName = method
-  //           .replace(/^workerOn(\w)/, (_, group) => group.toLowerCase())
-  //           .replace(/([A-Z]+)/, (_, group) => ` ${group.toLowerCase()}`.trim())
+  private _getListener(job: Job): {
+    workerListener: EventListener[]
+    queueListener: EventListener[]
+  } {
+    const listener = Object.getOwnPropertyNames(Object.getPrototypeOf(job))
+      .filter((el) => isListener(el))
+      .reduce(
+        (events, method) => {
+          if (method.startsWith('workerOn')) {
+            let eventName = method
+              .replace(/^workerOn(\w)/, (_, group) => group.toLowerCase())
+              .replace(/([A-Z]+)/, (_, group) => ` ${group.toLowerCase()}`.trim())
 
-  //         if (eventName === 'ioredisclose') {
-  //           eventName = 'ioredis:close'
-  //         }
+            if (eventName === 'ioredisclose') {
+              eventName = 'ioredis:close'
+            }
 
-  //         events.workerListener.push({ eventName, method })
-  //       } else if (method.startsWith('queueOn')) {
-  //         let eventName = method
-  //           .replace(/^queueOn(\w)/, (_, group) => group.toLowerCase())
-  //           .replace(/([A-Z]+)/, (_, group) => ` ${group.toLowerCase()}`.trim())
+            events.workerListener.push({ eventName, method })
+          } else if (method.startsWith('queueOn')) {
+            let eventName = method
+              .replace(/^queueOn(\w)/, (_, group) => group.toLowerCase())
+              .replace(/([A-Z]+)/, (_, group) => ` ${group.toLowerCase()}`.trim())
 
-  //         if (eventName === 'retriesexhausted') {
-  //           eventName = 'retries-exhausted'
-  //         }
+            if (eventName === 'retriesexhausted') {
+              eventName = 'retries-exhausted'
+            }
 
-  //         if (eventName === 'waitingchildren') {
-  //           eventName = 'waiting-children'
-  //         }
+            if (eventName === 'waitingchildren') {
+              eventName = 'waiting-children'
+            }
 
-  //         events.queueListener.push({ eventName, method })
-  //       }
+            events.queueListener.push({ eventName, method })
+          }
 
-  //       return events
-  //     },
-  //     {
-  //       workerListener: [],
-  //       queueListener: [],
-  //     } as {
-  //       workerListener: EventListener[]
-  //       queueListener: EventListener[]
-  //     }
-  //   )
+          return events
+        },
+        {
+          workerListener: [] as EventListener[],
+          queueListener: [] as EventListener[],
+        }
+      )
 
-  //   return listener
-  // }
-
-  private bindEvents(worker: Worker, queueEvents: QueueEvents) {
-    worker.on('completed', (job) => {
-      logger.info(`Job ${job.id} completed`)
-      // Ws.io.emit(`jobs:${job.queueName}`, {
-      //   event: 'completed',
-      //   jobId: job.id,
-      // })
-    })
-
-    worker.on('failed', (job, err) => {
-      logger.error(`Job ${job} failed: ${err.message}`)
-      // Ws.io.emit(`jobs:${job}`, {
-      //   event: 'failed',
-      //   jobId: job,
-      //   reason: err.message,
-      // })
-    })
-
-    worker.on('stalled', (job) => {
-      logger.warn(`Job ${job} stalled`)
-      // Ws.io.emit(`jobs:${job}`, { event: 'stalled', jobId: job })
-    })
-
-    worker.on('progress', (job, progress) => {
-      logger.info(`Job ${job.id} progress: ${progress}%`)
-      // Ws.io.emit(`jobs:${job.queueName}`, {
-      //   event: 'progress',
-      //   jobId: job.id,
-      //   progress,
-      // })
-    })
-
-    queueEvents.on('waiting', ({ jobId }) => {
-      logger.info(`Job ${jobId} is waiting`)
-      // Ws.io.emit(`jobs:${worker.name}`, { event: 'waiting', jobId })
-    })
-
-    queueEvents.on('delayed', ({ jobId }) => {
-      logger.info(`Job ${jobId} is delayed`)
-      // Ws.io.emit(`jobs:${worker.name}`, { event: 'delayed', jobId })
-    })
-
-    queueEvents.on('failed', ({ jobId, failedReason }) => {
-      logger.error(`Job ${jobId} failed: ${failedReason}`)
-      // Ws.io.emit(`jobs:${worker.name}`, {
-      //   event: 'failed',
-      //   jobId,
-      //   reason: failedReason,
-      // })
-    })
-
-    queueEvents.on('completed', ({ jobId }) => {
-      logger.info(`Job ${jobId} completed`)
-      // Ws.io.emit(`jobs:${worker.name}`, { event: 'completed', jobId })
-    })
+    return listener
   }
+
+  // private bindEvents(worker: Worker, queueEvents: QueueEvents) {
+  //   worker.on('completed', (job) => {
+  //     logger.info(`Job ${job.id} completed`)
+  //     // Ws.io.emit(`jobs:${job.queueName}`, {
+  //     //   event: 'completed',
+  //     //   jobId: job.id,
+  //     // })
+  //   })
+
+  //   worker.on('failed', (job, err) => {
+  //     logger.error(`Job ${job} failed: ${err.message}`)
+  //     // Ws.io.emit(`jobs:${job}`, {
+  //     //   event: 'failed',
+  //     //   jobId: job,
+  //     //   reason: err.message,
+  //     // })
+  //   })
+
+  //   worker.on('stalled', (job) => {
+  //     logger.warn(`Job ${job} stalled`)
+  //     // Ws.io.emit(`jobs:${job}`, { event: 'stalled', jobId: job })
+  //   })
+
+  //   worker.on('progress', (job, progress) => {
+  //     logger.info(`Job ${job.id} progress: ${progress}%`)
+  //     // Ws.io.emit(`jobs:${job.queueName}`, {
+  //     //   event: 'progress',
+  //     //   jobId: job.id,
+  //     //   progress,
+  //     // })
+  //   })
+
+  //   queueEvents.on('waiting', ({ jobId }) => {
+  //     logger.info(`Job ${jobId} is waiting`)
+  //     // Ws.io.emit(`jobs:${worker.name}`, { event: 'waiting', jobId })
+  //   })
+
+  //   queueEvents.on('delayed', ({ jobId }) => {
+  //     logger.info(`Job ${jobId} is delayed`)
+  //     // Ws.io.emit(`jobs:${worker.name}`, { event: 'delayed', jobId })
+  //   })
+
+  //   queueEvents.on('failed', ({ jobId, failedReason }) => {
+  //     logger.error(`Job ${jobId} failed: ${failedReason}`)
+  //     // Ws.io.emit(`jobs:${worker.name}`, {
+  //     //   event: 'failed',
+  //     //   jobId,
+  //     //   reason: failedReason,
+  //     // })
+  //   })
+
+  //   queueEvents.on('completed', ({ jobId }) => {
+  //     logger.info(`Job ${jobId} completed`)
+  //     // Ws.io.emit(`jobs:${worker.name}`, { event: 'completed', jobId })
+  //   })
+  // }
 }
