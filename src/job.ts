@@ -72,6 +72,15 @@ export abstract class Job<TPayload = any, TResult = any> {
     return bullmqJob
   }
 
+  static async getRedisJob(queueKey: string, jobId: string) {
+    const { default: app } = await import('@adonisjs/core/services/app')
+    const queues = await app.container.make('jobs.queues')
+
+    const job = await queues[queueKey].getJob(jobId)
+
+    return job as BullmqJob
+  }
+
   static async dispatchSync<T extends Job>(this: new () => T, payload: JobHandle<T['handle']>) {
     const { default: app } = await import('@adonisjs/core/services/app')
 
