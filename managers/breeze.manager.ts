@@ -103,32 +103,44 @@ export class BreezeManager {
     workerListener: EventListener[]
     queueListener: EventListener[]
   } {
-    return Object.getOwnPropertyNames(Object.getPrototypeOf(job))
-      .filter(isListener)
+    const listener = Object.getOwnPropertyNames(Object.getPrototypeOf(job))
+      .filter((el) => isListener(el))
       .reduce(
         (events, method) => {
-          const eventName = method.replace(/^(workerOn|queueOn)(\w+)/, (_, group) =>
-            `${group.charAt(0).toLowerCase()}${group.slice(1)}`.replace(/([A-Z]+)/, ' $1').trim()
-          )
-
           if (method.startsWith('workerOn')) {
-            events.workerListener.push({
-              eventName: eventName === 'ioredisclose' ? 'ioredis:close' : eventName,
-              method,
-            })
-          } else {
-            events.queueListener.push({ eventName: this.mapQueueEventName(eventName), method })
+            let eventName = method
+              .replace(/^workerOn(\w)/, (_, group) => group.toLowerCase())
+              .replace(/([A-Z]+)/, (_, group) => ` ${group.toLowerCase()}`.trim())
+
+            if (eventName === 'ioredisclose') {
+              eventName = 'ioredis:close'
+            }
+
+            events.workerListener.push({ eventName, method })
+          } else if (method.startsWith('queueOn')) {
+            let eventName = method
+              .replace(/^queueOn(\w)/, (_, group) => group.toLowerCase())
+              .replace(/([A-Z]+)/, (_, group) => ` ${group.toLowerCase()}`.trim())
+
+            if (eventName === 'retriesexhausted') {
+              eventName = 'retries-exhausted'
+            }
+
+            if (eventName === 'waitingchildren') {
+              eventName = 'waiting-children'
+            }
+
+            events.queueListener.push({ eventName, method })
           }
 
           return events
         },
-        { workerListener: [] as EventListener[], queueListener: [] as EventListener[] }
+        {
+          workerListener: [] as EventListener[],
+          queueListener: [] as EventListener[],
+        }
       )
-  }
 
-  private mapQueueEventName(eventName: string): string {
-    return eventName
-      .replace('retriesexhausted', 'retries-exhausted')
-      .replace('waitingchildren', 'waiting-children')
+    return listener
   }
 }

@@ -72,9 +72,9 @@ export default class JobsProvider {
       }
     })
 
+    this.app.container.singleton('breeze', () => new BreezeManager(this.app))
     this.app.container.singleton('jobs.list', () => jobs)
     this.app.container.singleton('jobs.queues', () => queues)
-    this.app.container.singleton('breeze', () => new BreezeManager(this.app))
   }
 }
 
