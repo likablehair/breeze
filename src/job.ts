@@ -52,14 +52,15 @@ export abstract class Job<TPayload = any, TResult = any> {
   abstract handle(payload: TPayload): Promise<TResult> | TResult
 
   static async dispatch<T extends Job>(
-    job: typeof Job,
+    this: new () => T,
     payload: JobHandle<T['handle']>,
     options: JobsOptions & { queueName?: string } = {}
   ) {
-    const config = this.app.config.get<ReturnType<typeof defineConfig>>('jobs', {}) as ReturnType<
+    const { default: app } = await import('@adonisjs/core/services/app')
+    const config = app.config.get<ReturnType<typeof defineConfig>>('jobs', {}) as ReturnType<
       typeof defineConfig
     >
-    const queues = await this.app.container.make('jobs.queues')
+    const queues = await app.container.make('jobs.queues')
     const queueName = options.queueName || config.queues[0]
     const queue = queues[queueName] as Queue
 
@@ -67,7 +68,7 @@ export abstract class Job<TPayload = any, TResult = any> {
       throw new Error(`Queue ${queueName} not found`)
     }
 
-    const bullmqJob = await queue.add(job.name, payload, options)
+    const bullmqJob = await queue.add(queueName, payload, options)
     return bullmqJob
   }
 
