@@ -1,7 +1,7 @@
 import { Worker, QueueEvents, Processor, WorkerOptions, QueueEventsOptions } from 'bullmq'
 import type { ApplicationService } from '@adonisjs/core/types'
 import { defineConfig } from '../src/define_config.js'
-import { isListener, Job, ListenersType } from '../src/job.js'
+import { isListener, Breeze, ListenersType } from '../src/breeze.js'
 import winston from 'winston'
 
 const customColors = {
@@ -33,7 +33,7 @@ export class BreezeManager {
 
   async process(): Promise<void> {
     const config = this.app.config.get<ReturnType<typeof defineConfig>>('jobs', {})
-    const jobs = await this.app.container.make('jobs.list')
+    const jobs = await this.app.container.make('breeze.list')
     const queues: string[] = config.queues || [config.queue]
 
     logger.info(`Processing jobs from queues: ${JSON.stringify(queues)}`)
@@ -49,7 +49,7 @@ export class BreezeManager {
         continue
       }
 
-      let job: Job
+      let job: Breeze
       try {
         job = await this.app.container.make(jobClass)
       } catch (error) {
@@ -61,7 +61,7 @@ export class BreezeManager {
     }
   }
 
-  private run(job: Job, queueName: string, config: ReturnType<typeof defineConfig>): void {
+  private run(job: Breeze, queueName: string, config: ReturnType<typeof defineConfig>): void {
     const workerOptions: WorkerOptions = {
       ...config.workerOptions,
       connection: config.connection,
@@ -99,7 +99,7 @@ export class BreezeManager {
     this.workers.push(worker)
   }
 
-  private getListeners(job: Job): {
+  private getListeners(job: Breeze): {
     workerListener: EventListener[]
     queueListener: EventListener[]
   } {

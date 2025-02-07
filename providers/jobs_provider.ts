@@ -2,7 +2,7 @@ import type { ApplicationService } from '@adonisjs/core/types'
 import { fsReadAll, importDefault, slash } from '@poppinss/utils'
 import { fileURLToPath } from 'node:url'
 import { basename, extname, relative } from 'node:path'
-import { Job, defineConfig } from '../index.js'
+import { Breeze, defineConfig } from '../index.js'
 import { RouteGroup } from '@adonisjs/core/http'
 import { Queue as BullmqQueue } from 'bullmq'
 import { BreezeManager } from '../managers/breeze.manager.js'
@@ -13,7 +13,7 @@ export default class JobsProvider {
   constructor(protected app: ApplicationService) {}
 
   async boot() {
-    const jobs: Record<string, typeof Job> = {}
+    const jobs: Record<string, typeof Breeze> = {}
     const jobsFiles = await fsReadAll(this.app.relativePath('app/jobs'), {
       pathType: 'url',
       ignoreMissingRoot: true,
@@ -45,7 +45,7 @@ export default class JobsProvider {
         relative(this.app.relativePath('app/jobs'), fileURLToPath(file))
       )
 
-      const jobClass = (await importDefault(() => import(file), relativeFileName)) as typeof Job
+      const jobClass = (await importDefault(() => import(file), relativeFileName)) as typeof Breeze
       jobClass.app = this.app
       jobs[jobClass.name] = jobClass
     }
@@ -73,8 +73,8 @@ export default class JobsProvider {
     })
 
     this.app.container.singleton('breeze', () => new BreezeManager(this.app))
-    this.app.container.singleton('jobs.list', () => jobs)
-    this.app.container.singleton('jobs.queues', () => queues)
+    this.app.container.singleton('breeze.list', () => jobs)
+    this.app.container.singleton('breeze.queues', () => queues)
   }
 }
 
@@ -86,8 +86,8 @@ declare module '@adonisjs/core/http' {
 
 declare module '@adonisjs/core/types' {
   export interface ContainerBindings {
-    'jobs.list': Record<string, typeof Job>
-    'jobs.queues': Record<string, BullmqQueue>
+    'breeze.list': Record<string, typeof Breeze>
+    'breeze.queues': Record<string, BullmqQueue>
     'breeze': BreezeManager
   }
 }

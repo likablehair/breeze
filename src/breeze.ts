@@ -1,4 +1,11 @@
-import { Job as BullmqJob, JobsOptions, Queue } from 'bullmq'
+import {
+  Job as BullmqJob,
+  JobData,
+  JobSchedulerJson,
+  JobsOptions,
+  Queue,
+  RepeatOptions,
+} from 'bullmq'
 import type { ApplicationService, LoggerService } from '@adonisjs/core/types'
 import { EventListener } from '../managers/breeze.manager.js'
 import { defineConfig } from './define_config.js'
@@ -42,27 +49,37 @@ export const listeners = [
 
 export type ListenersType = (typeof listeners)[number]
 export const isListener = (x: any): x is ListenersType => listeners.includes(x)
-export abstract class Job<TPayload = any, TResult = any> {
+export abstract class Breeze<TPayload = any, TResult = any> {
   declare instance?: BullmqJob<TPayload, TResult>
   declare logger?: LoggerService
   declare workerListener?: EventListener[]
   declare queueListener?: EventListener[]
   declare static app: ApplicationService
+  declare static queues: any
 
+  constructor() {
+    if (!Breeze.app) {
+      // Load app only once
+      import('@adonisjs/core/services/app').then(({ default: app }) => {
+        Breeze.app = app
+        Breeze.app.container.make('breeze.queues').then((queues) => {
+          Breeze.queues = queues
+        })
+      })
+    }
+  }
   abstract handle(payload: TPayload): Promise<TResult> | TResult
 
-  static async dispatch<T extends Job>(
+  static async dispatch<T extends Breeze>(
     this: new () => T,
     payload: JobHandle<T['handle']>,
     options: JobsOptions & { queueName?: string } = {}
   ) {
-    const { default: app } = await import('@adonisjs/core/services/app')
-    const config = app.config.get<ReturnType<typeof defineConfig>>('jobs', {}) as ReturnType<
+    const config = Breeze.app.config.get<ReturnType<typeof defineConfig>>('jobs', {}) as ReturnType<
       typeof defineConfig
     >
-    const queues = await app.container.make('jobs.queues')
     const queueName = options.queueName || config.queues[0]
-    const queue = queues[queueName] as Queue
+    const queue = Breeze.queues[queueName] as Queue
 
     if (!queue) {
       throw new Error(`Queue ${queueName} not found`)
@@ -73,19 +90,41 @@ export abstract class Job<TPayload = any, TResult = any> {
   }
 
   static async getRedisJob(queueKey: string, jobId: string) {
-    const { default: app } = await import('@adonisjs/core/services/app')
-    const queues = await app.container.make('jobs.queues')
-
-    const job = await queues[queueKey].getJob(jobId)
+    const job = await Breeze.queues[queueKey].getJob(jobId)
 
     return job as BullmqJob
   }
 
-  static async dispatchSync<T extends Job>(this: new () => T, payload: JobHandle<T['handle']>) {
+  static async upsertJobScheduler<DataType, ResultType>(
+    key: string,
+    schedulerId: string,
+    repeatOptions: RepeatOptions,
+    jobTemplate?: {
+      name?: string
+      data?: DataType
+      opts?: Omit<JobsOptions, 'jobId' | 'repeat' | 'delay'>
+    }
+  ): Promise<BullmqJob<DataType, ResultType>> {
+    return Breeze.queues[key].upsertJobScheduler(schedulerId, repeatOptions, jobTemplate)
+  }
+
+  static async getJobScheduler(key: string, jobId: string): Promise<JobSchedulerJson<JobData>> {
+    return Breeze.queues[key].getJobScheduler(jobId)
+  }
+
+  static async remove(key: string, jobId: string): Promise<void> {
+    await Breeze.queues[key].remove(jobId)
+  }
+
+  static async removeJobScheduler(key: string, jobId: string): Promise<boolean> {
+    return Breeze.queues[key].removeJobScheduler(jobId)
+  }
+
+  static async dispatchSync<T extends Breeze>(this: new () => T, payload: JobHandle<T['handle']>) {
     const { default: app } = await import('@adonisjs/core/services/app')
 
     const logger = await app.container.make('logger')
-    const instance: Job = await app.container.make(this)
+    const instance: Breeze = await app.container.make(this)
 
     instance.logger = logger
 
@@ -94,7 +133,7 @@ export abstract class Job<TPayload = any, TResult = any> {
 
   protected boot?: (queue: Queue<TPayload, TResult>) => void
 
-  protected async workerOnActive(job: Job<TPayload, TResult>, prev: string): Promise<void> {
+  protected async workerOnActive(job: Breeze<TPayload, TResult>, prev: string): Promise<void> {
     console.log(`Worker active - Job ${job}, previous state: ${prev}`)
   }
 
@@ -107,7 +146,7 @@ export abstract class Job<TPayload = any, TResult = any> {
   }
 
   protected async workerOnCompleted(
-    job: Job<TPayload, TResult>,
+    job: Breeze<TPayload, TResult>,
     result: TResult,
     prev: string
   ): Promise<void> {
@@ -123,7 +162,7 @@ export abstract class Job<TPayload = any, TResult = any> {
   }
 
   protected async workerOnFailed(
-    job: Job<TPayload, TResult> | undefined,
+    job: Breeze<TPayload, TResult> | undefined,
     error: Error,
     prev: string
   ): Promise<void> {
@@ -139,7 +178,7 @@ export abstract class Job<TPayload = any, TResult = any> {
   }
 
   protected async workerOnProgress(
-    job: Job<TPayload, TResult>,
+    job: Breeze<TPayload, TResult>,
     progress: number | object
   ): Promise<void> {
     console.log(`Worker progress - Job ${job}, progress: ${JSON.stringify(progress)}`)
