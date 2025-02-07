@@ -47,7 +47,7 @@ export const listeners = [
   'queueOnWaitingChildren',
 ] as const
 
-export type BullmqJob = BullmqJob
+export type Job = BullmqJob
 export type ListenersType = (typeof listeners)[number]
 export const isListener = (x: any): x is ListenersType => listeners.includes(x)
 export abstract class Breeze<TPayload = any, TResult = any> {
