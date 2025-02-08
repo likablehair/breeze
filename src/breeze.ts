@@ -86,7 +86,7 @@ export abstract class Breeze<TPayload = any, TResult = any> {
       throw new Error(`Queue ${queueName} not found`)
     }
 
-    const bullmqJob = await queue.add(queueName, { data: payload}, options)
+    const bullmqJob = await queue.add(queueName, {payload}, options)
     return bullmqJob
   }
 
