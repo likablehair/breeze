@@ -8,9 +8,6 @@ import {
 } from 'bullmq'
 import type { ApplicationService, LoggerService } from '@adonisjs/core/types'
 import { EventListener } from '../managers/breeze.manager.js'
-import { defineConfig } from './define_config.js'
-
-type JobHandle<T> = T extends (payload: infer P) => any ? (undefined extends P ? any : P) : any
 
 export const listeners = [
   'workerOnActive',
@@ -60,7 +57,6 @@ export abstract class Breeze<TPayload = any, TResult = any> {
 
   constructor() {
     if (!Breeze.app) {
-      // Load app only once
       import('@adonisjs/core/services/app').then(({ default: app }) => {
         Breeze.app = app
         Breeze.app.container.make('breeze.queues').then((queues) => {
@@ -71,15 +67,11 @@ export abstract class Breeze<TPayload = any, TResult = any> {
   }
   abstract handle(payload: TPayload): Promise<TResult> | TResult
 
-  static async dispatch<T extends Breeze>(
-    this: new () => T,
-    payload: JobHandle<T['handle']>,
+  static async dispatch<DataType, ResultType>(
+    queueName: string,
+    payload: DataType,
     options: JobsOptions & { queueName?: string } = {}
-  ) {
-    const config = Breeze.app.config.get<ReturnType<typeof defineConfig>>('jobs', {}) as ReturnType<
-      typeof defineConfig
-    >
-    const queueName = options.queueName || config.queues[0]
+  ): Promise<BullmqJob<DataType, ResultType>> {
     const queue = Breeze.queues[queueName] as Queue
 
     if (!queue) {
@@ -119,17 +111,6 @@ export abstract class Breeze<TPayload = any, TResult = any> {
 
   static async removeJobScheduler(key: string, jobId: string): Promise<boolean> {
     return Breeze.queues[key].removeJobScheduler(jobId)
-  }
-
-  static async dispatchSync<T extends Breeze>(this: new () => T, payload: JobHandle<T['handle']>) {
-    const { default: app } = await import('@adonisjs/core/services/app')
-
-    const logger = await app.container.make('logger')
-    const instance: Breeze = await app.container.make(this)
-
-    instance.logger = logger
-
-    await instance.handle(payload)
   }
 
   protected boot?: (queue: Queue<TPayload, TResult>) => void
