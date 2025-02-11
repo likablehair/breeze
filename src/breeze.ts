@@ -54,6 +54,7 @@ export abstract class Breeze<TPayload = any, TResult = any> {
   declare queueListener?: EventListener[]
   declare static app: ApplicationService
   declare static queues: any
+  declare static key: string
 
   constructor() {
     if (!Breeze.app) {
@@ -68,10 +69,11 @@ export abstract class Breeze<TPayload = any, TResult = any> {
   abstract handle(payload: TPayload): Promise<TResult> | TResult
 
   static async dispatch<DataType, ResultType>(
-    queueName: string,
     payload: DataType,
-    options: JobsOptions & { queueName?: string } = {}
+    options: JobsOptions & { queueName?: string } = {},
+    queueName?: string
   ): Promise<BullmqJob<DataType, ResultType>> {
+    if(!queueName) queueName = this.key;
     const queue = Breeze.queues[queueName] as Queue
 
     if (!queue) {
