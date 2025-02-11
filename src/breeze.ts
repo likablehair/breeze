@@ -73,7 +73,7 @@ export abstract class Breeze<TPayload = any, TResult = any> {
     options: JobsOptions & { queueName?: string } = {},
     queueName?: string
   ): Promise<BullmqJob<DataType, ResultType>> {
-    if(!queueName) queueName = this.key;
+    if (!queueName) queueName = this.key
     const queue = Breeze.queues[queueName] as Queue
 
     if (!queue) {
