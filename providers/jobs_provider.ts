@@ -14,7 +14,12 @@ export default class JobsProvider {
 
   async boot() {
     const jobs: Record<string, typeof Breeze> = {}
-    const jobsFiles = await fsReadAll(this.app.relativePath('app/Jobs'), {
+
+    const config = this.app.config.get<ReturnType<typeof defineConfig>>('jobs', {})
+
+    const jobsDirectory = config.jobsDirectory || 'app/jobs'
+
+    const jobsFiles = await fsReadAll(this.app.relativePath(jobsDirectory), {
       pathType: 'url',
       ignoreMissingRoot: true,
       filter: (filePath: string) => {
@@ -42,15 +47,13 @@ export default class JobsProvider {
       }
 
       const relativeFileName = slash(
-        relative(this.app.relativePath('app/Jobs'), fileURLToPath(file))
+        relative(this.app.relativePath(jobsDirectory), fileURLToPath(file))
       )
 
       const jobClass = (await importDefault(() => import(file), relativeFileName)) as typeof Breeze
       jobClass.app = this.app
       jobs[jobClass.name] = jobClass
     }
-
-    const config = this.app.config.get<ReturnType<typeof defineConfig>>('jobs', {})
 
     const queues = config.queues.reduce(
       (acc, name) => {

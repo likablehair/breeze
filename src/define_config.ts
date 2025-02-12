@@ -5,6 +5,7 @@ export type Config = {
   queue: string
   queues: string[]
   options: JobsOptions
+  jobsDirectory?: string
   workerOptions?: Omit<WorkerOptions, 'connection' | 'concurrency'>
 }
 
