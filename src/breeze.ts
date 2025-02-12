@@ -55,17 +55,7 @@ export abstract class Breeze<TPayload = any, TResult = any> {
   declare static app: ApplicationService
   declare static queues: any
   declare static key: string
-
-  constructor() {
-    if (!Breeze.app) {
-      import('@adonisjs/core/services/app').then(({ default: app }) => {
-        Breeze.app = app
-        Breeze.app.container.make('breeze.queues').then((queues) => {
-          Breeze.queues = queues
-        })
-      })
-    }
-  }
+  
   abstract handle(payload: TPayload): Promise<TResult> | TResult
 
   static async dispatch<DataType, ResultType>(
