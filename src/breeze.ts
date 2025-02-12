@@ -55,7 +55,7 @@ export abstract class Breeze<TPayload = any, TResult = any> {
   declare static app: ApplicationService
   declare static queues: any
   declare static key: string
-  
+
   abstract handle(payload: TPayload): Promise<TResult> | TResult
 
   static async dispatch<DataType, ResultType>(
