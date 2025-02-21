@@ -56,7 +56,7 @@ export abstract class Breeze<TPayload = any, TResult = any> {
   declare static queues: any
   declare static key: string
 
-  abstract handle(payload: TPayload): Promise<TResult> | TResult
+  abstract handle(job: BullmqJob<TPayload, TResult>): Promise<TResult> | TResult
 
   static async dispatch<DataType, ResultType>(
     payload: DataType,
