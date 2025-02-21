@@ -1,5 +1,5 @@
 <div align="center">
-  <h1><b>AdonisJS Jobs</b></h1>
+  <h1><b>Breeze</b></h1>
 
   <p>Job processing for AdonisJS v6 using <a href="https://bullmq.io/" target="_blank">BullMQ</a></p>
 </div>
