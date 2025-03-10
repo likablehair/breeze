@@ -48,21 +48,21 @@ export type BullJob = BullmqJob
 export type ListenersType = (typeof listeners)[number]
 export const isListener = (x: any): x is ListenersType => listeners.includes(x)
 export abstract class Breeze<TPayload = any, TResult = any> {
+  declare key: string
   declare instance?: BullmqJob<TPayload, TResult>
   declare logger?: LoggerService
   declare workerListener?: EventListener[]
   declare queueListener?: EventListener[]
   declare static app: ApplicationService
   declare static queues: any
-  declare static key: string
 
   abstract handle(payload: TPayload): Promise<TResult> | TResult
 
-  static async dispatch<DataType, ResultType>(
-    payload: DataType,
+  async dispatch(
+    payload: TPayload,
     options: JobsOptions & { queueName?: string } = {},
     queueName?: string
-  ): Promise<BullmqJob<DataType, ResultType>> {
+  ): Promise<BullmqJob<TPayload, TResult>> {
     if (!queueName) queueName = this.key
     const queue = Breeze.queues[queueName] as Queue
 
