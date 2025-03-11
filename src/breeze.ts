@@ -1,4 +1,4 @@
-import { Job, JobData, JobSchedulerJson, JobsOptions, Queue, RepeatOptions } from 'bullmq'
+import { Job, JobSchedulerJson, JobsOptions, Queue, RepeatOptions } from 'bullmq'
 import type { ApplicationService, LoggerService } from '@adonisjs/core/types'
 import { EventListener } from '../managers/breeze.manager.js'
 
@@ -73,20 +73,20 @@ export abstract class Breeze<TPayload = any, TResult = any> {
     return job as Job
   }
 
-  static async upsertJobScheduler<DataType, ResultType>(
+  async upsertJobScheduler<TPayload, TResult>(
     key: string,
     schedulerId: string,
     repeatOptions: RepeatOptions,
     jobTemplate?: {
       name?: string
-      data?: DataType
+      data?: TPayload
       opts?: Omit<JobsOptions, 'jobId' | 'repeat' | 'delay'>
     }
-  ): Promise<Job<DataType, ResultType>> {
+  ): Promise<Job<TPayload, TResult>> {
     return Breeze.queues[key].upsertJobScheduler(schedulerId, repeatOptions, jobTemplate)
   }
 
-  static async getJobScheduler(key: string, jobId: string): Promise<JobSchedulerJson<JobData>> {
+  static async getJobScheduler(key: string, jobId: string): Promise<JobSchedulerJson> {
     return Breeze.queues[key].getJobScheduler(jobId)
   }
 
