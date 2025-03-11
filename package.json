@@ -12,7 +12,7 @@
     "redis",
     "bullmq"
   ],
-  "version": "1.1.7",
+  "version": "1.1.8",
   "engines": {
     "node": ">=20.6.0"
   },
