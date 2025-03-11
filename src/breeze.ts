@@ -1,5 +1,5 @@
 import {
-  Job as BullmqJob,
+  Job,
   JobData,
   JobSchedulerJson,
   JobsOptions,
@@ -44,25 +44,25 @@ export const listeners = [
   'queueOnWaitingChildren',
 ] as const
 
-export type BullJob = BullmqJob
+export type BreezeJob = Job
 export type ListenersType = (typeof listeners)[number]
 export const isListener = (x: any): x is ListenersType => listeners.includes(x)
 export abstract class Breeze<TPayload = any, TResult = any> {
   declare key: string
-  declare instance?: BullmqJob<TPayload, TResult>
+  declare instance?: Job<TPayload, TResult>
   declare logger?: LoggerService
   declare workerListener?: EventListener[]
   declare queueListener?: EventListener[]
   declare static app: ApplicationService
   declare static queues: any
 
-  abstract handle(job: BullmqJob<TPayload, TResult>): Promise<TResult> | TResult
+  abstract handle(job: Job<TPayload, TResult>): Promise<TResult> | TResult
 
   async dispatch(
     payload: TPayload,
     options: JobsOptions & { queueName?: string } = {},
     queueName?: string
-  ): Promise<BullmqJob<TPayload, TResult>> {
+  ): Promise<Job<TPayload, TResult>> {
     if (!queueName) queueName = this.key
     const queue = Breeze.queues[queueName] as Queue
 
@@ -70,14 +70,14 @@ export abstract class Breeze<TPayload = any, TResult = any> {
       throw new Error(`Queue ${queueName} not found`)
     }
 
-    const bullmqJob = await queue.add(queueName, payload, options)
-    return bullmqJob
+    this.instance = await queue.add(queueName, payload, options)
+    return this.instance
   }
 
   static async getRedisJob(queueKey: string, jobId: string) {
     const job = await Breeze.queues[queueKey].getJob(jobId)
 
-    return job as BullmqJob
+    return job as Job
   }
 
   static async upsertJobScheduler<DataType, ResultType>(
@@ -89,7 +89,7 @@ export abstract class Breeze<TPayload = any, TResult = any> {
       data?: DataType
       opts?: Omit<JobsOptions, 'jobId' | 'repeat' | 'delay'>
     }
-  ): Promise<BullmqJob<DataType, ResultType>> {
+  ): Promise<Job<DataType, ResultType>> {
     return Breeze.queues[key].upsertJobScheduler(schedulerId, repeatOptions, jobTemplate)
   }
 
