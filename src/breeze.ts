@@ -73,7 +73,7 @@ export abstract class Breeze<TPayload = any, TResult = any> {
     return job as Job
   }
 
-  async upsertJobScheduler<TPayload, TResult>(
+  async upsertJobScheduler(
     key: string,
     schedulerId: string,
     repeatOptions: RepeatOptions,
