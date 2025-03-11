@@ -1,3 +1,7 @@
+{{{
+  exports({ to: app.makePath('app/jobs/' + filename + '.ts') })
+}}}
+
 import { Breeze, Job } from '@likable-hair/breeze';
 
 type {{ className }}Payload = {};
