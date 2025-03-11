@@ -1,12 +1,17 @@
-{{{
-  exports({ to: app.makePath('app/jobs/' + filename + '.ts') })
-}}}
-import { Job } from 'breeze'
+import { Breeze, Job } from '@likable-hair/breeze';
 
-type {{ className }}Payload = {}
+type {{ className }}Payload = {};
 
-export default class {{ className }} extends Job {
-    async handle(payload: {{ className }}Payload) {
-        this.logger.info('{{ className }} job handled')
-    }
+type {{ className }}Result = {};
+
+export default class {{ className }} extends Breeze<{{ className }}Payload, {{ className }}Result> {
+  public key = '{{ className }}' as const;
+
+  async handle(job: Job<{{ className }}Payload, {{ className }}Result, string>): Promise<{{ className }}Result> {
+    const payload = job.data; 
+
+    this.logger.info('{{ className }} job handled', payload);
+
+    return {}; // Return an empty object since {{ className }}Result is empty
+  }
 }
