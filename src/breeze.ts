@@ -1,11 +1,4 @@
-import {
-  Job,
-  JobData,
-  JobSchedulerJson,
-  JobsOptions,
-  Queue,
-  RepeatOptions,
-} from 'bullmq'
+import { Job, JobData, JobSchedulerJson, JobsOptions, Queue, RepeatOptions } from 'bullmq'
 import type { ApplicationService, LoggerService } from '@adonisjs/core/types'
 import { EventListener } from '../managers/breeze.manager.js'
 
