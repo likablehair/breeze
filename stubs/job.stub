@@ -14,7 +14,7 @@ export default class {{ className }} extends Breeze<{{ className }}Payload, {{ c
   async handle(job: Job<{{ className }}Payload, {{ className }}Result, string>): Promise<{{ className }}Result> {
     const payload = job.data; 
 
-    this.logger.info('{{ className }} job handled', payload);
+    console.info('{{ className }} job handled', payload);
 
     return {}; // Return an empty object since {{ className }}Result is empty
   }
