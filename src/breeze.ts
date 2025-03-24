@@ -42,6 +42,7 @@ export type ListenersType = (typeof listeners)[number]
 export const isListener = (x: any): x is ListenersType => listeners.includes(x)
 export abstract class Breeze<TPayload = any, TResult = any> {
   declare key: string
+  declare concurrency: number
   declare instance?: Job<TPayload, TResult>
   declare logger?: LoggerService
   declare workerListener?: EventListener[]

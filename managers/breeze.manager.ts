@@ -62,12 +62,12 @@ export class BreezeManager {
   }
 
   private run(job: Breeze, queueName: string, config: ReturnType<typeof defineConfig>): void {
+
     const workerOptions: WorkerOptions = {
       ...config.workerOptions,
       connection: config.connection,
-      concurrency: 1,
+      concurrency: job.concurrency ?? 1
     }
-
     const queueEventsOptions: QueueEventsOptions = {
       connection: config.connection,
     }
