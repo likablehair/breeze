@@ -1,4 +1,12 @@
-import { Job, JobSchedulerJson, JobsOptions, Queue, RepeatOptions } from 'bullmq'
+import {
+  FlowJob,
+  FlowProducer,
+  Job,
+  JobSchedulerJson,
+  JobsOptions,
+  Queue,
+  RepeatOptions,
+} from 'bullmq'
 import type { ApplicationService, LoggerService } from '@adonisjs/core/types'
 import { EventListener } from '../managers/breeze.manager.js'
 
@@ -66,6 +74,32 @@ export abstract class Breeze<TPayload = any, TResult = any> {
 
     this.instance = await queue.add(queueName, payload, options)
     return this.instance
+  }
+
+  static async addToFlowProducer({
+    name,
+    queueName,
+    data,
+    prefix,
+    opts,
+    children,
+  }: {
+    name: string
+    queueName: string
+    data?: any
+    prefix?: string
+    opts?: Omit<JobsOptions, 'parent' | 'repeat'>
+    children?: FlowJob[]
+  }) {
+    const flowProducer = new FlowProducer()
+    return await flowProducer.add({
+      name,
+      queueName,
+      data,
+      prefix,
+      opts,
+      children,
+    })
   }
 
   static async getRedisJob(queueKey: string, jobId: string) {
