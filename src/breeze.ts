@@ -1,4 +1,5 @@
 import {
+  ConnectionOptions,
   FlowJob,
   FlowProducer,
   Job,
@@ -83,6 +84,7 @@ export abstract class Breeze<TPayload = any, TResult = any> {
     prefix,
     opts,
     children,
+    connection,
   }: {
     name: string
     queueName: string
@@ -90,8 +92,9 @@ export abstract class Breeze<TPayload = any, TResult = any> {
     prefix?: string
     opts?: Omit<JobsOptions, 'parent' | 'repeat'>
     children?: FlowJob[]
+    connection: ConnectionOptions
   }) {
-    const flowProducer = new FlowProducer()
+    const flowProducer = new FlowProducer({ connection })
     return await flowProducer.add({
       name,
       queueName,
