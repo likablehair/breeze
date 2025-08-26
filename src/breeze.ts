@@ -136,6 +136,10 @@ export abstract class Breeze<TPayload = any, TResult = any> {
     return Breeze.queues[key].removeJobScheduler(jobId)
   }
 
+  static async removeRecurringJob(key: string, repeatOptions: RepeatOptions): Promise<boolean> {
+    return await Breeze.queues[key].removeRepeatable(key, repeatOptions)
+  }
+
   protected boot?: (queue: Queue<TPayload, TResult>) => void
 
   protected async workerOnActive(job: Breeze<TPayload, TResult>, prev: string): Promise<void> {
