@@ -74,7 +74,7 @@ export class BreezeManager {
     const processor: Processor = async (process) => {
       try {
         logger.info(`Job ${queueName} started. Job id: ${process.id}`)
-        if(!!config.processor) {
+        if (config.processor) {
           return await config.processor({ process, job })
         } else {
           let result = await job.handle(process)

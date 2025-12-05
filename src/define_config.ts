@@ -8,7 +8,7 @@ export type Config = {
   options: JobsOptions
   jobsDirectory?: string
   workerOptions?: Omit<WorkerOptions, 'connection' | 'concurrency'>
-  processor?: <T = any, R = any>(params: { job: Breeze<T, R>, process: Job<T, R, string> }) => any
+  processor?: <T = any, R = any>(params: { job: Breeze<T, R>; process: Job<T, R, string> }) => any
 }
 
 export function defineConfig(config: Config) {
