@@ -73,10 +73,17 @@ export class BreezeManager {
 
     const processor: Processor = async (process) => {
       try {
-        logger.info(`Job ${queueName} started`)
-        return await job.handle(process)
+        logger.info(`Job ${queueName} started. Job id: ${process.id}`)
+        if(!!config.processor) {
+          return await config.processor({ process, job })
+        } else {
+          let result = await job.handle(process)
+          logger.info(`Job ${queueName} completed. Job id: ${process.id}`)
+          return result
+        }
       } catch (error) {
         logger.error(`Job ${queueName} failed: ${error}`)
+        logger.error(error)
         throw error
       }
     }
