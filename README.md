@@ -55,6 +55,52 @@ await SendEmail.dispatch({ ... }, { // for more job options check https://docs.b
 })
 ```
 
+## Centralized Event Hooks
+
+You can intercept any worker or queue event once and reuse the logic across every job by providing the optional `onWorkerEvents`, `onQueueEvents`, or `onGlobalEvents` callbacks inside `defineConfig`.
+
+```ts
+// config/jobs.ts
+import { defineConfig } from '@likable-hair/breeze'
+
+export default defineConfig({
+  connection: { host: '127.0.0.1', port: 6379 },
+  queue: 'default',
+  queues: ['default'],
+  options: {},
+  onWorkerEvents: {
+    workerOnFailed: ({ job, params }) => {
+      const { bullJob, error } = params
+      job.logger?.error({ jobId: bullJob?.id, error })
+    },
+  },
+  onQueueEvents: {
+    queueOnCompleted: ({ job, params }) => {
+      const { payload, eventId } = params
+      job.logger?.info({ queueEvent: payload, eventId })
+    },
+  },
+  onGlobalEvents: ({ type, event, params, job }) => {
+    job.logger?.debug({ scope: type, event: event.method, params })
+  },
+})
+```
+
+Each handler receives the instantiated job plus the raw arguments emitted by BullMQ, so you can log, alert, or execute custom side effects without redefining every `workerOn*` or `queueOn*` method.
+
+If you need full typing for the event payloads in another application, import the `listenerMapping` (or the `WorkerListenerParamsMap` / `QueueListenerParamsMap`) from `@likable-hair/breeze`:
+
+```ts
+import { listenerMapping } from '@likable-hair/breeze'
+
+type WorkerFailedArgs = typeof listenerMapping.worker.workerOnFailed.params
+
+const handler = (methodParams: WorkerFailedArgs) => {
+  const { job, error, prevStatus } = methodParams
+  // fully typed tuple
+}
+```
+
 ## Import Aliases (optional)
 
 update your `package.json` and `tsconfig.json` to use import aliases

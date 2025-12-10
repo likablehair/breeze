@@ -1,5 +1,15 @@
 import type { ConnectionOptions, Job, JobsOptions, WorkerOptions } from 'bullmq'
-import { Breeze } from './breeze.js'
+import {
+  AllPossibleParams,
+  Breeze,
+  ListenerScope,
+  ListenersType,
+  QueueListenerName,
+  QueueListenerParamsMap,
+  WorkerListenerName,
+  WorkerListenerParamsMap,
+} from './breeze.js'
+import { EventListener } from '../managers/breeze.manager.js'
 
 export type Config = {
   connection: ConnectionOptions
@@ -9,6 +19,24 @@ export type Config = {
   jobsDirectory?: string
   workerOptions?: Omit<WorkerOptions, 'connection' | 'concurrency'>
   processor?: <T = any, R = any>(params: { job: Breeze<T, R>; process: Job<T, R, string> }) => any
+  onQueueEvents?: {
+    [eventMethod in QueueListenerName]?: <T = any, R = any>(params: {
+      job: Breeze<T, R>
+      params: QueueListenerParamsMap[eventMethod]
+    }) => void
+  }
+  onWorkerEvents?: {
+    [eventMethod in WorkerListenerName]?: <T = any, R = any>(params: {
+      job: Breeze<T, R>
+      params: WorkerListenerParamsMap[eventMethod]
+    }) => void
+  }
+  onGlobalEvents?: <T = any, R = any, K extends ListenersType = ListenersType>(params: {
+    event: EventListener<K>
+    job: Breeze<T, R>
+    type: ListenerScope
+    params: AllPossibleParams
+  }) => void
 }
 
 export function defineConfig(config: Config) {

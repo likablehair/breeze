@@ -1,7 +1,15 @@
 import { Worker, QueueEvents, Processor, WorkerOptions, QueueEventsOptions } from 'bullmq'
 import type { ApplicationService } from '@adonisjs/core/types'
 import { defineConfig } from '../src/define_config.js'
-import { isListener, Breeze, ListenersType } from '../src/breeze.js'
+import {
+  Breeze,
+  ListenersType,
+  ListenerParamsLookup,
+  ListenerScope,
+  WorkerListenerName,
+  QueueListenerName,
+  listenerMapping,
+} from '../src/breeze.js'
 import winston from 'winston'
 
 const customColors = {
@@ -21,10 +29,13 @@ const logger = winston.createLogger({
   transports: [new winston.transports.Console()],
 })
 
-export interface EventListener {
+export interface EventListener<K extends ListenersType = ListenersType> {
   eventName: string
-  method: ListenersType
+  method: K
+  params: ListenerParamsLookup[K]
 }
+
+type BreezeConfig = ReturnType<typeof defineConfig>
 
 export class BreezeManager {
   private workers: Worker[] = []
@@ -32,7 +43,7 @@ export class BreezeManager {
   constructor(private app: ApplicationService) {}
 
   async process(): Promise<void> {
-    const config = this.app.config.get<ReturnType<typeof defineConfig>>('jobs', {})
+    const config = this.app.config.get<BreezeConfig>('jobs', {})
     const jobs = await this.app.container.make('breeze.list')
     const queues: string[] = config.queues || [config.queue]
 
@@ -61,7 +72,7 @@ export class BreezeManager {
     }
   }
 
-  private run(job: Breeze, queueName: string, config: ReturnType<typeof defineConfig>): void {
+  private run(job: Breeze, queueName: string, config: BreezeConfig): void {
     const workerOptions: WorkerOptions = {
       ...config.workerOptions,
       connection: config.connection,
@@ -91,62 +102,74 @@ export class BreezeManager {
     const worker = new Worker(queueName, processor, workerOptions)
     const queueEvents = new QueueEvents(queueName, queueEventsOptions)
 
-    const listeners = this.getListeners(job)
-    job.workerListener = listeners.workerListener
+    const jobListeners = this.getListeners()
+    job.workerListener = jobListeners.workerListener
 
-    for (const { eventName, method } of job.workerListener) {
-      worker.on(eventName as any, job[method].bind(job))
+    for (const listener of jobListeners.workerListener) {
+      const handler = createListenerHandler(listener, job, 'worker', config)
+      worker.on(listener.eventName as any, handler)
     }
 
-    job.queueListener = listeners.queueListener
-    for (const { eventName, method } of job.queueListener) {
-      queueEvents.on(eventName as any, job[method].bind(job))
+    job.queueListener = jobListeners.queueListener
+    for (const listener of jobListeners.queueListener) {
+      const handler = createListenerHandler(listener, job, 'queue', config)
+      queueEvents.on(listener.eventName as any, handler)
     }
+
     this.workers.push(worker)
   }
 
-  private getListeners(job: Breeze): {
-    workerListener: EventListener[]
-    queueListener: EventListener[]
+  private getListeners(): {
+    workerListener: EventListener<WorkerListenerName>[]
+    queueListener: EventListener<QueueListenerName>[]
   } {
-    const listener = Object.getOwnPropertyNames(Object.getPrototypeOf(job))
-      .filter((el) => isListener(el))
-      .reduce(
-        (events, method) => {
-          if (method.startsWith('workerOn')) {
-            let eventName = method
-              .replace(/^workerOn(\w)/, (_, group) => group.toLowerCase())
-              .replace(/([A-Z]+)/, (_, group) => ` ${group.toLowerCase()}`.trim())
+    const workerListener = Object.entries(listenerMapping.worker).map(([method, definition]) => ({
+      method: method as WorkerListenerName,
+      eventName: definition.eventName,
+      params: definition.params,
+    })) as EventListener<WorkerListenerName>[]
 
-            if (eventName === 'ioredisclose') {
-              eventName = 'ioredis:close'
-            }
+    const queueListener = Object.entries(listenerMapping.queue).map(([method, definition]) => ({
+      method: method as QueueListenerName,
+      eventName: definition.eventName,
+      params: definition.params,
+    })) as EventListener<QueueListenerName>[]
 
-            events.workerListener.push({ eventName, method })
-          } else if (method.startsWith('queueOn')) {
-            let eventName = method
-              .replace(/^queueOn(\w)/, (_, group) => group.toLowerCase())
-              .replace(/([A-Z]+)/, (_, group) => ` ${group.toLowerCase()}`.trim())
+    return { workerListener, queueListener }
+  }
+}
 
-            if (eventName === 'retriesexhausted') {
-              eventName = 'retries-exhausted'
-            }
+export function createListenerHandler<K extends ListenersType>(
+  listener: EventListener<K>,
+  job: Breeze,
+  type: ListenerScope,
+  config: BreezeConfig
+) {
+  return (methodParams: ListenerParamsLookup[K]) => {
+    if (type === 'worker') {
+      config.onWorkerEvents?.[listener.method]?.({
+        job,
+        params: methodParams,
+      })
+    } else {
+      config.onQueueEvents?.[listener.method]?.({
+        job,
+        params: methodParams,
+      })
+    }
 
-            if (eventName === 'waitingchildren') {
-              eventName = 'waiting-children'
-            }
+    config.onGlobalEvents?.({
+      event: listener,
+      job,
+      type,
+      params: methodParams,
+    })
 
-            events.queueListener.push({ eventName, method })
-          }
+    const jobMethod = job[listener.method] as ((...params: any[]) => any) | undefined
+    if (jobMethod) {
+      return jobMethod.apply(job, Object.values(methodParams || {}))
+    }
 
-          return events
-        },
-        {
-          workerListener: [] as EventListener[],
-          queueListener: [] as EventListener[],
-        }
-      )
-
-    return listener
+    return undefined
   }
 }

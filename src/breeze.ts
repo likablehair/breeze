@@ -11,7 +11,7 @@ import {
 import type { ApplicationService, LoggerService } from '@adonisjs/core/types'
 import { EventListener } from '../managers/breeze.manager.js'
 
-export const listeners = [
+export const workerListenerMethods = [
   'workerOnActive',
   'workerOnClosed',
   'workerOnClosing',
@@ -25,6 +25,9 @@ export const listeners = [
   'workerOnReady',
   'workerOnResumed',
   'workerOnStalled',
+] as const
+
+export const queueListenerMethods = [
   'queueOnActive',
   'queueOnAdded',
   'queueOnCleaned',
@@ -45,6 +48,8 @@ export const listeners = [
   'queueOnWaiting',
   'queueOnWaitingChildren',
 ] as const
+
+export const listeners = [...workerListenerMethods, ...queueListenerMethods] as const
 
 export type { Job }
 export type ListenersType = (typeof listeners)[number]
@@ -316,4 +321,262 @@ export abstract class Breeze<TPayload = any, TResult = any> {
   protected async queueOnWaitingChildren(args: { jobId: string }, id: string): Promise<void> {
     console.log(`Queue waiting for children - Job ${args.jobId}, Event id: ${id}`)
   }
+}
+
+export type WorkerListenerName = (typeof workerListenerMethods)[number]
+export type QueueListenerName = (typeof queueListenerMethods)[number]
+export type ListenerScope = 'worker' | 'queue'
+
+type WorkerListenerParams = {
+  workerOnActive: { job: Breeze<any, any>; prev: string }
+  workerOnClosed: {}
+  workerOnClosing: { msg: string }
+  workerOnCompleted: { job: Breeze<any, any>; result: any; prev: string }
+  workerOnDrained: {}
+  workerOnError: { failedReason: Error }
+  workerOnFailed: { job: Breeze<any, any> | undefined; error: Error; prev: string }
+  workerOnIoredisClose: {}
+  workerOnPaused: {}
+  workerOnProgress: { job: Breeze<any, any>; progress: number | object }
+  workerOnReady: {}
+  workerOnResumed: {}
+  workerOnStalled: { jobId: string; prev: string }
+}
+
+type QueueListenerParams = {
+  queueOnActive: { args: { jobId: string; prev?: string }; id: string }
+  queueOnAdded: { args: { jobId: string; name: string }; id: string }
+  queueOnCleaned: { args: { count: string }; id: string }
+  queueOnCompleted: { args: { jobId: string; returnvalue: string; prev?: string }; id: string }
+  queueOnDebounced: { args: { jobId: string; debounceId: string }; id: string }
+  queueOnDeduplicated: { args: { jobId: string; deduplicationId: string }; id: string }
+  queueOnDelayed: { args: { jobId: string; delay: number }; id: string }
+  queueOnDrained: { id: string }
+  queueOnDuplicated: { args: { jobId: string }; id: string }
+  queueOnError: { args: Error }
+  queueOnFailed: { args: { jobId: string; failedReason: string; prev?: string }; id: string }
+  queueOnPaused: { args: {}; id: string }
+  queueOnProgress: { args: { jobId: string; data: number | object }; id: string }
+  queueOnRemoved: { args: { jobId: string; prev: string }; id: string }
+  queueOnResumed: { args: {}; id: string }
+  queueOnRetriesExhausted: { args: { jobId: string; attemptsMade: string }; id: string }
+  queueOnStalled: { args: { jobId: string }; id: string }
+  queueOnWaiting: { args: { jobId: string; prev?: string }; id: string }
+  queueOnWaitingChildren: { args: { jobId: string }; id: string }
+}
+
+type WorkerListenerDefinitions = {
+  [K in WorkerListenerName]: {
+    eventName: string
+    params: WorkerListenerParams[K]
+  }
+}
+
+type QueueListenerDefinitions = {
+  [K in QueueListenerName]: {
+    eventName: string
+    params: QueueListenerParams[K]
+  }
+}
+
+export type WorkerListenerParamsMap = WorkerListenerParams
+export type QueueListenerParamsMap = QueueListenerParams
+export type ListenerParamsLookup = WorkerListenerParamsMap & QueueListenerParamsMap
+
+type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (k: infer I) => void
+  ? I
+  : never
+
+type DeepPartial<T> = T extends object
+  ? {
+      [P in keyof T]?: DeepPartial<T[P]>
+    }
+  : T
+
+export type AllPossibleParams = DeepPartial<
+  UnionToIntersection<ListenerParamsLookup[keyof ListenerParamsLookup]>
+>
+
+export type ListenerMapping = {
+  worker: WorkerListenerDefinitions
+  queue: QueueListenerDefinitions
+}
+
+const workerEventNames: Record<WorkerListenerName, string> = {
+  workerOnActive: 'active',
+  workerOnClosed: 'closed',
+  workerOnClosing: 'closing',
+  workerOnCompleted: 'completed',
+  workerOnDrained: 'drained',
+  workerOnError: 'error',
+  workerOnFailed: 'failed',
+  workerOnIoredisClose: 'ioredis:close',
+  workerOnPaused: 'paused',
+  workerOnProgress: 'progress',
+  workerOnReady: 'ready',
+  workerOnResumed: 'resumed',
+  workerOnStalled: 'stalled',
+}
+
+const queueEventNames: Record<QueueListenerName, string> = {
+  queueOnActive: 'active',
+  queueOnAdded: 'added',
+  queueOnCleaned: 'cleaned',
+  queueOnCompleted: 'completed',
+  queueOnDebounced: 'debounced',
+  queueOnDeduplicated: 'deduplicated',
+  queueOnDelayed: 'delayed',
+  queueOnDrained: 'drained',
+  queueOnDuplicated: 'duplicated',
+  queueOnError: 'error',
+  queueOnFailed: 'failed',
+  queueOnPaused: 'paused',
+  queueOnProgress: 'progress',
+  queueOnRemoved: 'removed',
+  queueOnResumed: 'resumed',
+  queueOnRetriesExhausted: 'retries-exhausted',
+  queueOnStalled: 'stalled',
+  queueOnWaiting: 'waiting',
+  queueOnWaitingChildren: 'waiting-children',
+}
+
+const createWorkerParams = <K extends WorkerListenerName>() =>
+  undefined as unknown as WorkerListenerParams[K]
+
+const createQueueParams = <K extends QueueListenerName>() =>
+  undefined as unknown as QueueListenerParams[K]
+
+export const listenerMapping: ListenerMapping = {
+  worker: {
+    workerOnActive: {
+      eventName: workerEventNames.workerOnActive,
+      params: createWorkerParams<'workerOnActive'>(),
+    },
+    workerOnClosed: {
+      eventName: workerEventNames.workerOnClosed,
+      params: createWorkerParams<'workerOnClosed'>(),
+    },
+    workerOnClosing: {
+      eventName: workerEventNames.workerOnClosing,
+      params: createWorkerParams<'workerOnClosing'>(),
+    },
+    workerOnCompleted: {
+      eventName: workerEventNames.workerOnCompleted,
+      params: createWorkerParams<'workerOnCompleted'>(),
+    },
+    workerOnDrained: {
+      eventName: workerEventNames.workerOnDrained,
+      params: createWorkerParams<'workerOnDrained'>(),
+    },
+    workerOnError: {
+      eventName: workerEventNames.workerOnError,
+      params: createWorkerParams<'workerOnError'>(),
+    },
+    workerOnFailed: {
+      eventName: workerEventNames.workerOnFailed,
+      params: createWorkerParams<'workerOnFailed'>(),
+    },
+    workerOnIoredisClose: {
+      eventName: workerEventNames.workerOnIoredisClose,
+      params: createWorkerParams<'workerOnIoredisClose'>(),
+    },
+    workerOnPaused: {
+      eventName: workerEventNames.workerOnPaused,
+      params: createWorkerParams<'workerOnPaused'>(),
+    },
+    workerOnProgress: {
+      eventName: workerEventNames.workerOnProgress,
+      params: createWorkerParams<'workerOnProgress'>(),
+    },
+    workerOnReady: {
+      eventName: workerEventNames.workerOnReady,
+      params: createWorkerParams<'workerOnReady'>(),
+    },
+    workerOnResumed: {
+      eventName: workerEventNames.workerOnResumed,
+      params: createWorkerParams<'workerOnResumed'>(),
+    },
+    workerOnStalled: {
+      eventName: workerEventNames.workerOnStalled,
+      params: createWorkerParams<'workerOnStalled'>(),
+    },
+  },
+  queue: {
+    queueOnActive: {
+      eventName: queueEventNames.queueOnActive,
+      params: createQueueParams<'queueOnActive'>(),
+    },
+    queueOnAdded: {
+      eventName: queueEventNames.queueOnAdded,
+      params: createQueueParams<'queueOnAdded'>(),
+    },
+    queueOnCleaned: {
+      eventName: queueEventNames.queueOnCleaned,
+      params: createQueueParams<'queueOnCleaned'>(),
+    },
+    queueOnCompleted: {
+      eventName: queueEventNames.queueOnCompleted,
+      params: createQueueParams<'queueOnCompleted'>(),
+    },
+    queueOnDebounced: {
+      eventName: queueEventNames.queueOnDebounced,
+      params: createQueueParams<'queueOnDebounced'>(),
+    },
+    queueOnDeduplicated: {
+      eventName: queueEventNames.queueOnDeduplicated,
+      params: createQueueParams<'queueOnDeduplicated'>(),
+    },
+    queueOnDelayed: {
+      eventName: queueEventNames.queueOnDelayed,
+      params: createQueueParams<'queueOnDelayed'>(),
+    },
+    queueOnDrained: {
+      eventName: queueEventNames.queueOnDrained,
+      params: createQueueParams<'queueOnDrained'>(),
+    },
+    queueOnDuplicated: {
+      eventName: queueEventNames.queueOnDuplicated,
+      params: createQueueParams<'queueOnDuplicated'>(),
+    },
+    queueOnError: {
+      eventName: queueEventNames.queueOnError,
+      params: createQueueParams<'queueOnError'>(),
+    },
+    queueOnFailed: {
+      eventName: queueEventNames.queueOnFailed,
+      params: createQueueParams<'queueOnFailed'>(),
+    },
+    queueOnPaused: {
+      eventName: queueEventNames.queueOnPaused,
+      params: createQueueParams<'queueOnPaused'>(),
+    },
+    queueOnProgress: {
+      eventName: queueEventNames.queueOnProgress,
+      params: createQueueParams<'queueOnProgress'>(),
+    },
+    queueOnRemoved: {
+      eventName: queueEventNames.queueOnRemoved,
+      params: createQueueParams<'queueOnRemoved'>(),
+    },
+    queueOnResumed: {
+      eventName: queueEventNames.queueOnResumed,
+      params: createQueueParams<'queueOnResumed'>(),
+    },
+    queueOnRetriesExhausted: {
+      eventName: queueEventNames.queueOnRetriesExhausted,
+      params: createQueueParams<'queueOnRetriesExhausted'>(),
+    },
+    queueOnStalled: {
+      eventName: queueEventNames.queueOnStalled,
+      params: createQueueParams<'queueOnStalled'>(),
+    },
+    queueOnWaiting: {
+      eventName: queueEventNames.queueOnWaiting,
+      params: createQueueParams<'queueOnWaiting'>(),
+    },
+    queueOnWaitingChildren: {
+      eventName: queueEventNames.queueOnWaitingChildren,
+      params: createQueueParams<'queueOnWaitingChildren'>(),
+    },
+  },
 }
