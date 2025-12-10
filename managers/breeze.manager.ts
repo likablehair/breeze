@@ -86,7 +86,7 @@ export class BreezeManager {
       try {
         logger.info(`Job ${queueName} started. Job id: ${process.id}`)
         if (config.processor) {
-          return await config.processor({ process, job })
+          return await config.processor({ process, job, logger })
         } else {
           let result = await job.handle(process)
           logger.info(`Job ${queueName} completed. Job id: ${process.id}`)

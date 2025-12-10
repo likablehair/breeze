@@ -10,6 +10,7 @@ import {
   WorkerListenerParamsMap,
 } from './breeze.js'
 import { EventListener } from '../managers/breeze.manager.js'
+import winston from 'winston'
 
 export type Config = {
   connection: ConnectionOptions
@@ -18,7 +19,7 @@ export type Config = {
   options: JobsOptions
   jobsDirectory?: string
   workerOptions?: Omit<WorkerOptions, 'connection' | 'concurrency'>
-  processor?: <T = any, R = any>(params: { job: Breeze<T, R>; process: Job<T, R, string> }) => any
+  processor?: <T = any, R = any>(params: { job: Breeze<T, R>; process: Job<T, R, string>, logger: winston.Logger }) => any
   onQueueEvents?: {
     [eventMethod in QueueListenerName]?: <T = any, R = any>(params: {
       job: Breeze<T, R>
