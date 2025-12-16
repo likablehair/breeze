@@ -147,180 +147,115 @@ export abstract class Breeze<TPayload = any, TResult = any> {
 
   protected boot?: (queue: Queue<TPayload, TResult>) => void
 
-  protected async workerOnActive(job: Breeze<TPayload, TResult>, prev: string): Promise<void> {
-    console.log(`Worker active - Job ${job}, previous state: ${prev}`)
-  }
+  protected async workerOnActive(_job: Breeze<TPayload, TResult>, _prev: string): Promise<void> {}
 
-  protected async workerOnClosed(): Promise<void> {
-    console.log('Worker closed')
-  }
+  protected async workerOnClosed(): Promise<void> {}
 
-  protected async workerOnClosing(msg: string): Promise<void> {
-    console.log(`Worker closing: ${msg}`)
-  }
+  protected async workerOnClosing(_msg: string): Promise<void> {}
 
   protected async workerOnCompleted(
-    job: Breeze<TPayload, TResult>,
-    result: TResult,
-    prev: string
-  ): Promise<void> {
-    console.log(`Worker completed - Job ${job}, result: ${result}, previous state: ${prev}`)
-  }
+    _job: Breeze<TPayload, TResult>,
+    _result: TResult,
+    _prev: string
+  ): Promise<void> {}
 
-  protected async workerOnDrained(): Promise<void> {
-    console.log('Worker queue drained')
-  }
+  protected async workerOnDrained(): Promise<void> {}
 
-  protected async workerOnError(failedReason: Error): Promise<void> {
-    console.log(`Worker error: ${failedReason.message}`)
-  }
+  protected async workerOnError(_failedReason: Error): Promise<void> {}
 
   protected async workerOnFailed(
-    job: Breeze<TPayload, TResult> | undefined,
-    error: Error,
-    prev: string
-  ): Promise<void> {
-    console.log(`Worker failed - Job ${job}, error: ${error.message}, previous state: ${prev}`)
-  }
+    _job: Breeze<TPayload, TResult> | undefined,
+    _error: Error,
+    _prev: string
+  ): Promise<void> {}
 
-  protected async workerOnIoredisClose(): Promise<void> {
-    console.log('Worker ioredis closed')
-  }
+  protected async workerOnIoredisClose(): Promise<void> {}
 
-  protected async workerOnPaused(): Promise<void> {
-    console.log('Worker paused')
-  }
+  protected async workerOnPaused(): Promise<void> {}
 
   protected async workerOnProgress(
-    job: Breeze<TPayload, TResult>,
-    progress: number | object
-  ): Promise<void> {
-    console.log(`Worker progress - Job ${job}, progress: ${JSON.stringify(progress)}`)
-  }
+    _job: Breeze<TPayload, TResult>,
+    _progress: number | object
+  ): Promise<void> {}
 
-  protected async workerOnReady(): Promise<void> {
-    console.log('Worker ready')
-  }
+  protected async workerOnReady(): Promise<void> {}
 
-  protected async workerOnResumed(): Promise<void> {
-    console.log('Worker resumed')
-  }
+  protected async workerOnResumed(): Promise<void> {}
 
-  protected async workerOnStalled(jobId: string, prev: string): Promise<void> {
-    console.log(`Worker stalled - Job ${jobId}, previous state: ${prev}`)
-  }
+  protected async workerOnStalled(_jobId: string, _prev: string): Promise<void> {}
 
-  protected async queueOnActive(args: { jobId: string; prev?: string }, id: string): Promise<void> {
-    console.log(`Queue active - Job ${args.jobId}, previous state: ${args.prev}, Event id: ${id}`)
-  }
+  protected async queueOnActive(
+    _args: { jobId: string; prev?: string },
+    _id: string
+  ): Promise<void> {}
 
-  protected async queueOnAdded(args: { jobId: string; name: string }, id: string): Promise<void> {
-    console.log(`Queue added - Job ${args.jobId}, Name: ${args.name}, Event id: ${id}`)
-  }
+  protected async queueOnAdded(
+    _args: { jobId: string; name: string },
+    _id: string
+  ): Promise<void> {}
 
-  protected async queueOnCleaned(args: { count: string }, id: string): Promise<void> {
-    console.log(`Queue cleaned - Count: ${args.count}, Event id: ${id}`)
-  }
+  protected async queueOnCleaned(_args: { count: string }, _id: string): Promise<void> {}
 
   protected async queueOnCompleted(
-    args: { jobId: string; returnvalue: string; prev?: string },
-    id: string
-  ): Promise<void> {
-    console.log(
-      `Queue completed - Job ${args.jobId}, Return value: ${args.returnvalue}, Previous state: ${args.prev}, Event id: ${id}`
-    )
-  }
+    _args: { jobId: string; returnvalue: string; prev?: string },
+    _id: string
+  ): Promise<void> {}
 
   protected async queueOnDebounced(
-    args: { jobId: string; debounceId: string },
-    id: string
-  ): Promise<void> {
-    console.log(
-      `Queue debounced - Job ${args.jobId}, Debounce ID: ${args.debounceId}, Event id: ${id}`
-    )
-  }
+    _args: { jobId: string; debounceId: string },
+    _id: string
+  ): Promise<void> {}
 
   protected async queueOnDeduplicated(
-    args: { jobId: string; deduplicationId: string },
-    id: string
-  ): Promise<void> {
-    console.log(
-      `Queue deduplicated - Job ${args.jobId}, Deduplication ID: ${args.deduplicationId}, Event id: ${id}`
-    )
-  }
+    _args: { jobId: string; deduplicationId: string },
+    _id: string
+  ): Promise<void> {}
 
   protected async queueOnDelayed(
-    args: { jobId: string; delay: number },
-    id: string
-  ): Promise<void> {
-    console.log(`Queue delayed - Job ${args.jobId}, Delay: ${args.delay}, Event id: ${id}`)
-  }
+    _args: { jobId: string; delay: number },
+    _id: string
+  ): Promise<void> {}
 
-  protected async queueOnDrained(id: string): Promise<void> {
-    console.log(`Queue drained - Event id: ${id}`)
-  }
+  protected async queueOnDrained(_id: string): Promise<void> {}
 
-  protected async queueOnDuplicated(args: { jobId: string }, id: string): Promise<void> {
-    console.log(`Queue duplicated - Job ${args.jobId}, Event id: ${id}`)
-  }
+  protected async queueOnDuplicated(_args: { jobId: string }, _id: string): Promise<void> {}
 
   protected async queueOnError(args: Error): Promise<void> {
     console.log(`Queue error: ${args.message}`)
   }
 
   protected async queueOnFailed(
-    args: { jobId: string; failedReason: string; prev?: string },
-    id: string
-  ): Promise<void> {
-    console.log(
-      `Queue failed - Job ${args.jobId}, Reason: ${args.failedReason}, Previous state: ${args.prev}, Event id: ${id}`
-    )
-  }
+    _args: { jobId: string; failedReason: string; prev?: string },
+    _id: string
+  ): Promise<void> {}
 
-  protected async queueOnPaused(args: {}, id: string): Promise<void> {
-    console.log(`Queue paused - Event id: ${id}, ${args}`)
-  }
+  protected async queueOnPaused(_args: {}, _id: string): Promise<void> {}
 
   protected async queueOnProgress(
-    args: { jobId: string; data: number | object },
-    id: string
-  ): Promise<void> {
-    console.log(
-      `Queue progress - Job ${args.jobId}, Progress: ${JSON.stringify(args.data)}, Event id: ${id}`
-    )
-  }
+    _args: { jobId: string; data: number | object },
+    _id: string
+  ): Promise<void> {}
 
-  protected async queueOnRemoved(args: { jobId: string; prev: string }, id: string): Promise<void> {
-    console.log(`Queue removed - Job ${args.jobId}, Previous state: ${args.prev}, Event id: ${id}`)
-  }
+  protected async queueOnRemoved(
+    _args: { jobId: string; prev: string },
+    _id: string
+  ): Promise<void> {}
 
-  protected async queueOnResumed(args: {}, id: string): Promise<void> {
-    console.log(`Queue resumed - Event id: ${id}, ${args}`)
-  }
+  protected async queueOnResumed(_args: {}, _id: string): Promise<void> {}
 
   protected async queueOnRetriesExhausted(
-    args: { jobId: string; attemptsMade: string },
-    id: string
-  ): Promise<void> {
-    console.log(
-      `Queue retries exhausted - Job ${args.jobId}, Attempts made: ${args.attemptsMade}, Event id: ${id}`
-    )
-  }
+    _args: { jobId: string; attemptsMade: string },
+    _id: string
+  ): Promise<void> {}
 
-  protected async queueOnStalled(args: { jobId: string }, id: string): Promise<void> {
-    console.log(`Queue stalled - Job ${args.jobId}, Event id: ${id}`)
-  }
+  protected async queueOnStalled(_args: { jobId: string }, _id: string): Promise<void> {}
 
   protected async queueOnWaiting(
-    args: { jobId: string; prev?: string },
-    id: string
-  ): Promise<void> {
-    console.log(`Queue waiting - Job ${args.jobId}, Previous state: ${args.prev}, Event id: ${id}`)
-  }
+    _args: { jobId: string; prev?: string },
+    _id: string
+  ): Promise<void> {}
 
-  protected async queueOnWaitingChildren(args: { jobId: string }, id: string): Promise<void> {
-    console.log(`Queue waiting for children - Job ${args.jobId}, Event id: ${id}`)
-  }
+  protected async queueOnWaitingChildren(_args: { jobId: string }, _id: string): Promise<void> {}
 }
 
 export type WorkerListenerName = (typeof workerListenerMethods)[number]
