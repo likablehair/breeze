@@ -1,5 +1,5 @@
 import app from '@adonisjs/core/services/app'
-import { BreezeManager } from '../managers/breeze.manager.js'
+import { type BreezeManager } from '../managers/breeze.manager.js'
 
 let breeze: BreezeManager
 

@@ -1,5 +1,5 @@
 import { BaseCommand, args } from '@adonisjs/core/ace'
-import { CommandOptions } from '@adonisjs/core/types/ace'
+import { type CommandOptions } from '@adonisjs/core/types/ace'
 import { stubsRoot } from '../index.js'
 import stringHelpers from '@adonisjs/core/helpers/string'
 

@@ -1,13 +1,19 @@
-import { Worker, QueueEvents, Processor, WorkerOptions, QueueEventsOptions } from 'bullmq'
-import type { ApplicationService } from '@adonisjs/core/types'
-import { defineConfig } from '../src/define_config.js'
 import {
-  Breeze,
-  ListenersType,
-  ListenerParamsLookup,
-  ListenerScope,
-  WorkerListenerName,
-  QueueListenerName,
+  Worker,
+  QueueEvents,
+  type Processor,
+  type WorkerOptions,
+  type QueueEventsOptions,
+} from 'bullmq'
+import type { ApplicationService } from '@adonisjs/core/types'
+import { type defineConfig } from '../src/define_config.js'
+import {
+  type Breeze,
+  type ListenersType,
+  type ListenerParamsLookup,
+  type ListenerScope,
+  type WorkerListenerName,
+  type QueueListenerName,
   listenerMapping,
 } from '../src/breeze.js'
 import winston from 'winston'

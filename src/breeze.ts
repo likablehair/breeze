@@ -1,15 +1,15 @@
 import {
-  ConnectionOptions,
-  FlowJob,
+  type ConnectionOptions,
+  type FlowJob,
   FlowProducer,
-  Job,
-  JobSchedulerJson,
-  JobsOptions,
-  Queue,
-  RepeatOptions,
+  type Job,
+  type JobSchedulerJson,
+  type JobsOptions,
+  type Queue,
+  type RepeatOptions,
 } from 'bullmq'
 import type { ApplicationService, LoggerService } from '@adonisjs/core/types'
-import { EventListener } from '../managers/breeze.manager.js'
+import { type EventListener } from '../managers/breeze.manager.js'
 
 export const workerListenerMethods = [
   'workerOnActive',

@@ -1,16 +1,16 @@
 import type { ConnectionOptions, Job, JobsOptions, WorkerOptions } from 'bullmq'
 import {
-  AllPossibleParams,
-  Breeze,
-  ListenerScope,
-  ListenersType,
-  QueueListenerName,
-  QueueListenerParamsMap,
-  WorkerListenerName,
-  WorkerListenerParamsMap,
+  type AllPossibleParams,
+  type Breeze,
+  type ListenerScope,
+  type ListenersType,
+  type QueueListenerName,
+  type QueueListenerParamsMap,
+  type WorkerListenerName,
+  type WorkerListenerParamsMap,
 } from './breeze.js'
-import { EventListener } from '../managers/breeze.manager.js'
-import winston from 'winston'
+import { type EventListener } from '../managers/breeze.manager.js'
+import type winston from 'winston'
 
 export type Config = {
   connection: ConnectionOptions
