@@ -6,7 +6,7 @@ import {
   type JobSchedulerJson,
   type JobsOptions,
   type Queue,
-  RateLimiterOptions,
+  type RateLimiterOptions,
   type RepeatOptions,
 } from 'bullmq'
 import type { ApplicationService, LoggerService } from '@adonisjs/core/types'
