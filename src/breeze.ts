@@ -6,6 +6,7 @@ import {
   JobSchedulerJson,
   JobsOptions,
   Queue,
+  RateLimiterOptions,
   RepeatOptions,
 } from 'bullmq'
 import type { ApplicationService, LoggerService } from '@adonisjs/core/types'
@@ -57,6 +58,7 @@ export const isListener = (x: any): x is ListenersType => listeners.includes(x)
 export abstract class Breeze<TPayload = any, TResult = any> {
   declare key: string
   declare concurrency: number
+  declare limiter?: RateLimiterOptions
   declare instance?: Job<TPayload, TResult>
   declare logger?: LoggerService
   declare workerListener?: EventListener[]
