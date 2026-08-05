@@ -60,6 +60,7 @@ export default class JobsProvider {
         const queue = new BullmqQueue(name, {
           connection: config.connection,
           defaultJobOptions: config.options,
+          telemetry: config.telemetry,
         })
 
         acc[name] = queue
@@ -79,6 +80,7 @@ export default class JobsProvider {
     this.app.container.singleton('breeze.list', () => jobs)
     this.app.container.singleton('breeze.queues', () => queues)
     Breeze.queues = queues
+    Breeze.telemetry = config.telemetry
   }
 }
 

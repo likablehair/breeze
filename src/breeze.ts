@@ -8,6 +8,7 @@ import {
   type Queue,
   type RateLimiterOptions,
   type RepeatOptions,
+  type Telemetry,
 } from 'bullmq'
 import type { ApplicationService, LoggerService } from '@adonisjs/core/types'
 import { type EventListener } from '../managers/breeze.manager.js'
@@ -65,6 +66,7 @@ export abstract class Breeze<TPayload = any, TResult = any> {
   declare queueListener?: EventListener[]
   declare static app: ApplicationService
   declare static queues: any
+  static telemetry?: Telemetry
 
   abstract handle(job: Job<TPayload, TResult>): Promise<TResult> | TResult
 
@@ -101,7 +103,7 @@ export abstract class Breeze<TPayload = any, TResult = any> {
     children?: FlowJob[]
     connection: ConnectionOptions
   }) {
-    const flowProducer = new FlowProducer({ connection })
+    const flowProducer = new FlowProducer({ connection, telemetry: Breeze.telemetry })
     return await flowProducer.add({
       name,
       queueName,

@@ -84,6 +84,7 @@ export class BreezeManager {
       connection: config.connection,
       concurrency: job.concurrency ?? 1,
       limiter: job.limiter ?? config.limiter,
+      telemetry: config.telemetry,
     }
     const queueEventsOptions: QueueEventsOptions = {
       connection: config.connection,

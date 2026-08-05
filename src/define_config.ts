@@ -1,4 +1,11 @@
-import type { ConnectionOptions, Job, JobsOptions, RateLimiterOptions, WorkerOptions } from 'bullmq'
+import type {
+  ConnectionOptions,
+  Job,
+  JobsOptions,
+  RateLimiterOptions,
+  Telemetry,
+  WorkerOptions,
+} from 'bullmq'
 import {
   type AllPossibleParams,
   type Breeze,
@@ -20,6 +27,7 @@ export type Config = {
   jobsDirectory?: string
   limiter?: RateLimiterOptions
   workerOptions?: Omit<WorkerOptions, 'connection' | 'concurrency'>
+  telemetry?: Telemetry
   processor?: <T = any, R = any>(params: {
     job: Breeze<T, R>
     process: Job<T, R, string>
