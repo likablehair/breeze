@@ -101,6 +101,20 @@ const handler = (methodParams: WorkerFailedArgs) => {
 }
 ```
 
+## OpenTelemetry (optional)
+
+Breeze supports OpenTelemetry instrumentation: install the optional [`bullmq-otel`](https://www.npmjs.com/package/bullmq-otel) package and pass a `telemetry` instance in `defineConfig` to trace job dispatching and processing.
+
+```ts
+// config/jobs.ts
+import { BullMQOtel } from 'bullmq-otel'
+
+export default defineConfig({
+  // ...
+  telemetry: new BullMQOtel('breeze'),
+})
+```
+
 ## Import Aliases (optional)
 
 update your `package.json` and `tsconfig.json` to use import aliases
